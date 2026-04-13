@@ -84,8 +84,14 @@ public class EntrenadorService {
             - Serie #%d de %d
             - Peso usado: %s kg
             - Repeticiones hechas: %s
-            - Fue al fallo: %s
+            - Intensidad reportada (RPE): %s%%
             - Como se sintio: %s
+
+            GUIA DE INTENSIDAD RPE:
+            - Menor a 70%%: El usuario siente que fue facil, probablemente puede subir peso o reps.
+            - 70-80%%: Moderado a pesado, buen rango de trabajo para hipertrofia.
+            - 80-90%%: Pesado, cerca del limite. Bueno para fuerza.
+            - 90-100%%: Al limite o al fallo. Debe mantener o bajar en la siguiente serie.
 
             Plan original del ejercicio: %s reps, %s kg sugeridos
 
@@ -184,7 +190,7 @@ public class EntrenadorService {
         int seriesTotales = ((Number) datos.getOrDefault("series_totales", 3)).intValue();
         String peso = String.valueOf(datos.getOrDefault("peso", "0"));
         String reps = String.valueOf(datos.getOrDefault("reps", "0"));
-        boolean alFallo = Boolean.TRUE.equals(datos.get("al_fallo"));
+        int intensidad = ((Number) datos.getOrDefault("intensidad", 70)).intValue();
         String comoSeSintio = (String) datos.getOrDefault("como_se_sintio", "");
         String repsPlan = String.valueOf(datos.getOrDefault("reps_plan", "10-12"));
         String pesoSugerido = String.valueOf(datos.getOrDefault("peso_plan", "0"));
@@ -207,7 +213,7 @@ public class EntrenadorService {
                 usuario.getObjetivoGeneral() != null ? usuario.getObjetivoGeneral() : "No definido",
                 usuario.getObjetivoEspecifico() != null ? usuario.getObjetivoEspecifico() : "No definido",
                 ejercicio, musculoPrincipal, serieActual, seriesTotales,
-                peso, reps, alFallo ? "Si" : "No", comoSeSintio.isBlank() ? "No especifico" : comoSeSintio,
+                peso, reps, String.valueOf(intensidad), comoSeSintio.isBlank() ? "No especifico" : comoSeSintio,
                 repsPlan, pesoSugerido, seriesHoy, historialTexto.toString());
 
         List<Map<String, String>> messages = new ArrayList<>();
