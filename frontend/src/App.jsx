@@ -1,87 +1,93 @@
 import { useState, useEffect } from 'react';
 import { getUsuario } from './services/api';
+import Layout from './components/Layout';
+import Profile from './components/Profile';
+import SaludChat from './components/SaludChat';
+import SaludHistorial from './components/SaludHistorial';
+import EntrenadorChat from './components/EntrenadorChat';
+import EntrenadorHistorial from './components/EntrenadorHistorial';
+import ActiveWorkout from './components/ActiveWorkout';
 import './App.css';
 
+const USUARIO_ID = 1;
+
+const subTabStyle = {
+  container: { display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid #1e2d27', paddingBottom: '0.5rem' },
+  btn: { padding: '0.4rem 1rem', border: 'none', borderRadius: '6px 6px 0 0', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", borderBottom: '2px solid transparent' },
+  active: { color: '#4ade80', borderBottomColor: '#4ade80' },
+};
+
 function App() {
-  const [usuario, setUsuario] = useState(null);
-  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('perfil');
+  const [saludSubTab, setSaludSubTab] = useState('chat');
+  const [entrenadorSubTab, setEntrenadorSubTab] = useState('chat');
+  const [activeWorkout, setActiveWorkout] = useState(null);
+  const [saludConnected, setSaludConnected] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    getUsuario(1)
-      .then(setUsuario)
-      .catch((e) => setError(e.message));
+    getUsuario(USUARIO_ID)
+      .then(() => { setLoaded(true); setSaludConnected(true); })
+      .catch(() => setLoaded(true));
   }, []);
 
+  if (!loaded) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0f0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+        Cargando...
+      </div>
+    );
+  }
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0a0f0d',
-      color: '#e0e0e0',
-      fontFamily: "'DM Sans', sans-serif",
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-    }}>
-      <h1 style={{ fontSize: '2.5rem', color: '#4ade80', marginBottom: '0.5rem' }}>
-        SaludEntrenador
-      </h1>
-      <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
-        Plataforma de salud y entrenamiento personal con IA
-      </p>
+    <Layout activeTab={activeTab} onTabChange={setActiveTab} saludConnected={saludConnected}>
+      {/* PERFIL */}
+      {activeTab === 'perfil' && <Profile usuarioId={USUARIO_ID} />}
 
-      {error && (
-        <div style={{
-          background: '#1c1c1c',
-          border: '1px solid #ef4444',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          maxWidth: '500px',
-          width: '100%',
-        }}>
-          <p style={{ color: '#ef4444' }}>Error conectando al backend: {error}</p>
-          <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-            Asegurate de que el backend este corriendo en localhost:8080
-          </p>
-        </div>
-      )}
-
-      {usuario && (
-        <div style={{
-          background: '#1a1f1d',
-          border: '1px solid #2d3a35',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          maxWidth: '500px',
-          width: '100%',
-        }}>
-          <h2 style={{ color: '#4ade80', fontSize: '1.2rem', marginBottom: '1rem' }}>
-            Conectado al backend
-          </h2>
-          <div style={{ display: 'grid', gap: '0.5rem' }}>
-            <InfoRow label="Nombre" value={usuario.nombre} />
-            <InfoRow label="Edad" value={`${usuario.edad} anios`} />
-            <InfoRow label="Peso" value={`${usuario.pesoInicial} kg`} />
-            <InfoRow label="Estatura" value={`${usuario.estatura} cm`} />
-            <InfoRow label="Objetivo" value={usuario.objetivo} />
+      {/* SALUD */}
+      {activeTab === 'salud' && (
+        <>
+          <div style={subTabStyle.container}>
+            <button style={{ ...subTabStyle.btn, ...(saludSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('chat')}>
+              Chat
+            </button>
+            <button style={{ ...subTabStyle.btn, ...(saludSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('historial')}>
+              Historial
+            </button>
           </div>
-        </div>
+          {saludSubTab === 'chat' && <SaludChat usuarioId={USUARIO_ID} />}
+          {saludSubTab === 'historial' && <SaludHistorial usuarioId={USUARIO_ID} />}
+        </>
       )}
 
-      {!usuario && !error && (
-        <p style={{ color: '#94a3b8' }}>Cargando...</p>
+      {/* ENTRENADOR */}
+      {activeTab === 'entrenador' && (
+        <>
+          {activeWorkout ? (
+            <ActiveWorkout
+              rutina={activeWorkout}
+              usuarioId={USUARIO_ID}
+              onFinish={() => { setActiveWorkout(null); setEntrenadorSubTab('historial'); }}
+            />
+          ) : (
+            <>
+              <div style={subTabStyle.container}>
+                <button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('chat')}>
+                  Chat
+                </button>
+                <button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('historial')}>
+                  Historial
+                </button>
+              </div>
+              {entrenadorSubTab === 'chat' && (
+                <EntrenadorChat usuarioId={USUARIO_ID} onStartWorkout={setActiveWorkout} />
+              )}
+              {entrenadorSubTab === 'historial' && <EntrenadorHistorial usuarioId={USUARIO_ID} />}
+            </>
+          )}
+        </>
       )}
-    </div>
-  );
-}
-
-function InfoRow({ label, value }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid #2d3a35' }}>
-      <span style={{ color: '#94a3b8' }}>{label}</span>
-      <span style={{ color: '#e0e0e0', fontWeight: 600 }}>{value}</span>
-    </div>
+    </Layout>
   );
 }
 
