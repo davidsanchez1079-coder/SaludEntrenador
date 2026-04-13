@@ -28,17 +28,17 @@ public class Usuario {
 
     private String objetivoGeneral;
 
-    @Column(length = 500)
+    @Column(columnDefinition = "TEXT")
     private String objetivoEspecifico;
 
     private String telefono;
 
     private String correo;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String condiciones;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String alergias;
 
     @Column(updatable = false)
