@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["jdk21_headless","maven"]
-
-[phases.build]
-cmds = ["cd backend && mvn clean package -DskipTests"]
-
-[start]
-cmd = "java -jar backend/target/entrenador-0.0.1-SNAPSHOT.jar"
