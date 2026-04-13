@@ -44,6 +44,17 @@ function getIntensityLabel(val) {
   return 'Al fallo';
 }
 
+function cleanAndParseJSON(text) {
+  if (!text || typeof text !== 'string') return null;
+  let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start >= 0 && end > start) {
+    cleaned = cleaned.substring(start, end + 1);
+  }
+  try { return JSON.parse(cleaned); } catch { return null; }
+}
+
 /**
  * Parsea el feedback que puede venir como:
  * - Objeto ya parseado con campos feedback, alerta, ajuste_siguiente_serie
