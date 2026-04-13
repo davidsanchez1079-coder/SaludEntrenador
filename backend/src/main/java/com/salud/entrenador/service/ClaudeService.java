@@ -54,8 +54,9 @@ public class ClaudeService {
             headers.setBearerAuth(apiKey);
 
             // OpenAI espera el system prompt como primer mensaje con role "system"
+            String fullSystemPrompt = systemPrompt + "\n\nIMPORTANTE: Responde UNICAMENTE con el JSON, sin texto adicional antes o despues del JSON.";
             List<Map<String, String>> allMessages = new ArrayList<>();
-            allMessages.add(Map.of("role", "system", "content", systemPrompt));
+            allMessages.add(Map.of("role", "system", "content", fullSystemPrompt));
             allMessages.addAll(messages);
 
             Map<String, Object> requestBody = Map.of(
@@ -95,7 +96,7 @@ public class ClaudeService {
             if (choices != null && choices.isArray() && !choices.isEmpty()) {
                 JsonNode message = choices.get(0).get("message");
                 if (message != null && message.has("content")) {
-                    return message.get("content").asText();
+                    return cleanJsonResponse(message.get("content").asText());
                 }
             }
 
@@ -106,5 +107,20 @@ public class ClaudeService {
             log.error("Error al parsear respuesta de OpenAI: {}", e.getMessage());
             return responseBody;
         }
+    }
+
+    /**
+     * Limpia la respuesta de la IA: quita backticks markdown y texto
+     * antes/despues del JSON. Extrae solo el bloque JSON.
+     */
+    private String cleanJsonResponse(String response) {
+        if (response == null || response.isBlank()) return response;
+        String cleaned = response.replaceAll("```json", "").replaceAll("```", "").trim();
+        int start = cleaned.indexOf('{');
+        int end = cleaned.lastIndexOf('}');
+        if (start >= 0 && end > start) {
+            cleaned = cleaned.substring(start, end + 1);
+        }
+        return cleaned;
     }
 }

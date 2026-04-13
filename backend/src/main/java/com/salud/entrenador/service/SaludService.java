@@ -69,7 +69,7 @@ public class SaludService {
 
         // Llamar a Claude
         String respuestaIA = claudeService.chat(systemPrompt, messages);
-        respuestaIA = respuestaIA.replaceAll("```json", "").replaceAll("```", "").trim();
+
 
         // Parsear respuesta
         CategoriaSalud categoria = CategoriaSalud.BIENESTAR;

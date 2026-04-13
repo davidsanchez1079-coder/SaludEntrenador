@@ -156,7 +156,7 @@ public class EntrenadorService {
         messages.add(Map.of("role", "user", "content", mensaje));
 
         String respuestaIA = claudeService.chat(systemPrompt, messages);
-        respuestaIA = respuestaIA.replaceAll("```json", "").replaceAll("```", "").trim();
+
 
         String respuestaTexto = respuestaIA;
         Object rutina = null;
@@ -221,7 +221,7 @@ public class EntrenadorService {
         messages.add(Map.of("role", "user", "content", "Dame feedback de esta serie."));
 
         String respuestaIA = claudeService.chat(prompt, messages);
-        respuestaIA = respuestaIA.replaceAll("```json", "").replaceAll("```", "").trim();
+
 
         Map<String, Object> resultado = new java.util.HashMap<>();
         resultado.put("feedback", respuestaIA);
@@ -261,7 +261,7 @@ public class EntrenadorService {
         messages.add(Map.of("role", "user", "content", "Evalua mi sesion de entrenamiento."));
 
         String respuestaIA = claudeService.chat(prompt, messages);
-        respuestaIA = respuestaIA.replaceAll("```json", "").replaceAll("```", "").trim();
+
 
         Map<String, Object> resultado = new java.util.HashMap<>();
         resultado.put("resumen", respuestaIA);
