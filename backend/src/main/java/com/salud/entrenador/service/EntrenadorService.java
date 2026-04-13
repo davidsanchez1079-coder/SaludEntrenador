@@ -168,7 +168,8 @@ public class EntrenadorService {
             if (json.has("rutina") && !json.get("rutina").isNull()) rutina = objectMapper.convertValue(json.get("rutina"), Map.class);
             if (json.has("consejo")) consejo = json.get("consejo").asText();
         } catch (Exception e) {
-            log.warn("Respuesta del entrenador no es JSON valido: {}", e.getMessage());
+            log.warn("Respuesta del entrenador no es JSON valido, usando texto plano: {}", e.getMessage());
+            respuestaTexto = respuestaIA;
         }
 
         Map<String, Object> resultado = new java.util.HashMap<>();
@@ -234,7 +235,9 @@ public class EntrenadorService {
             if (json.has("alerta")) resultado.put("alerta", json.get("alerta").asText());
             if (json.has("ajuste_siguiente_serie")) resultado.put("ajuste_siguiente_serie", objectMapper.convertValue(json.get("ajuste_siguiente_serie"), Map.class));
         } catch (Exception e) {
-            log.warn("Feedback no es JSON valido: {}", e.getMessage());
+            log.warn("Feedback no es JSON valido, usando texto plano: {}", e.getMessage());
+            resultado.put("feedback", respuestaIA);
+            resultado.put("alerta", "ok");
         }
 
         return resultado;
@@ -274,7 +277,9 @@ public class EntrenadorService {
             if (json.has("calificacion")) resultado.put("calificacion", json.get("calificacion").asText());
             if (json.has("proximo_enfoque")) resultado.put("proximo_enfoque", json.get("proximo_enfoque").asText());
         } catch (Exception e) {
-            log.warn("Resumen sesion no es JSON valido: {}", e.getMessage());
+            log.warn("Resumen sesion no es JSON valido, usando texto plano: {}", e.getMessage());
+            resultado.put("resumen", respuestaIA);
+            resultado.put("calificacion", "buena");
         }
 
         return resultado;
