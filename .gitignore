@@ -30,6 +30,7 @@ target/
 
 # === Spring Boot ===
 backend/target/
+backend/data/
 
 # === Node / React ===
 node_modules/
