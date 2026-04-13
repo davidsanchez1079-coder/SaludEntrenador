@@ -146,8 +146,9 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
         const pesoSug = parsed.ajuste_siguiente_serie.peso_sugerido;
         if (pesoSug) updateSet(setIdx + 1, 'peso', String(pesoSug));
       }
-    } catch {
-      updateSet(setIdx, 'feedback', { feedback: 'No se pudo obtener feedback', alerta: 'ok' });
+    } catch (err) {
+      console.error('[ActiveWorkout] Error en feedback-serie:', err);
+      updateSet(setIdx, 'feedback', { feedback: 'No se pudo obtener feedback: ' + err.message, alerta: 'warning' });
     }
     setLoadingFeedback(null);
   };

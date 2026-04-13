@@ -6,11 +6,17 @@ async function request(path, options = {}) {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   };
+  console.log('[API]', config.method || 'GET', url);
+  if (config.body) console.log('[API] Body:', config.body);
   const res = await fetch(url, config);
   if (!res.ok) {
+    const errorBody = await res.text().catch(() => '');
+    console.error('[API] Error', res.status, res.statusText, errorBody);
     throw new Error(`Error ${res.status}: ${res.statusText}`);
   }
-  return res.json();
+  const data = await res.json();
+  console.log('[API] Response:', JSON.stringify(data).substring(0, 500));
+  return data;
 }
 
 // ---- Usuarios ----
