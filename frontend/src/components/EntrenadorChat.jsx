@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { chatEntrenador } from '../services/api';
+import { extractReadableText } from '../services/parseUtils';
 import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
 import LoadingDots from './LoadingDots';
@@ -26,9 +27,9 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
       const res = await chatEntrenador(usuarioId, text);
       const assistantMsg = {
         role: 'assistant',
-        content: res.respuesta || 'Sin respuesta',
+        content: extractReadableText(res.respuesta, 'respuesta') || 'Sin respuesta',
         rutina: res.rutina || null,
-        consejo: res.consejo || null,
+        consejo: typeof res.consejo === 'string' ? extractReadableText(res.consejo, 'consejo') : (res.consejo || null),
         time: new Date().toLocaleTimeString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);

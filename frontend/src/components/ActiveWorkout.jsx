@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { guardarWorkout, feedbackSerie, resumenSesion } from '../services/api';
+import { cleanAndParseJSON, extractReadableText } from '../services/parseUtils';
 import LoadingDots from './LoadingDots';
 
 const s = {
@@ -42,6 +43,42 @@ function getIntensityLabel(val) {
   if (val <= 80) return 'Pesado';
   if (val <= 90) return 'Muy pesado';
   return 'Al fallo';
+}
+
+/**
+ * Parsea el feedback que puede venir como:
+ * - Objeto ya parseado con campos feedback, alerta, ajuste_siguiente_serie
+ * - String JSON crudo (posiblemente con backticks ```json ... ```)
+ * - El campo 'feedback' del objeto puede ser string JSON a su vez
+ */
+function parseFeedback(fb) {
+  if (!fb) return { feedback: 'Sin feedback', alerta: 'ok' };
+
+  // Si fb.feedback es string que parece JSON, parsearlo
+  if (typeof fb.feedback === 'string') {
+    const inner = cleanAndParseJSON(fb.feedback);
+    if (inner && inner.feedback) {
+      return {
+        feedback: inner.feedback,
+        alerta: inner.alerta || fb.alerta || 'ok',
+        ajuste_siguiente_serie: inner.ajuste_siguiente_serie || fb.ajuste_siguiente_serie || null,
+      };
+    }
+  }
+
+  // Si fb ya tiene los campos correctos como strings limpias
+  if (fb.feedback && typeof fb.feedback === 'string' && !fb.feedback.startsWith('{')) {
+    return fb;
+  }
+
+  // Si todo fb es un string
+  if (typeof fb === 'string') {
+    const parsed = cleanAndParseJSON(fb);
+    if (parsed && parsed.feedback) return parsed;
+    return { feedback: fb, alerta: 'ok' };
+  }
+
+  return { feedback: String(fb.feedback || 'Sin feedback'), alerta: fb.alerta || 'ok', ajuste_siguiente_serie: fb.ajuste_siguiente_serie };
 }
 
 export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
@@ -102,10 +139,12 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
         series_anteriores_hoy: seriesAnterioresHoy,
       });
 
-      updateSet(setIdx, 'feedback', fb);
+      // Parsear feedback: puede venir como JSON crudo, string con backticks, o ya parseado
+      const parsed = parseFeedback(fb);
+      updateSet(setIdx, 'feedback', parsed);
 
-      if (fb.ajuste_siguiente_serie && setIdx + 1 < currentLogs.length) {
-        const pesoSug = fb.ajuste_siguiente_serie.peso_sugerido;
+      if (parsed.ajuste_siguiente_serie && setIdx + 1 < currentLogs.length) {
+        const pesoSug = parsed.ajuste_siguiente_serie.peso_sugerido;
         if (pesoSug) updateSet(setIdx + 1, 'peso', String(pesoSug));
       }
     } catch {
@@ -130,7 +169,22 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
     const logStr = JSON.stringify(logCompleto);
 
     try {
-      const resumen = await resumenSesion(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr });
+      const rawResumen = await resumenSesion(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr });
+      // Parsear resumen que puede venir como string JSON con backticks
+      const resumen = {
+        resumen: extractReadableText(rawResumen.resumen, 'resumen') || rawResumen.resumen || '',
+        calificacion: rawResumen.calificacion || 'buena',
+        proximo_enfoque: rawResumen.proximo_enfoque || '',
+      };
+      // Si resumen.resumen sigue siendo JSON, intentar extraer
+      if (typeof resumen.resumen === 'string') {
+        const p = cleanAndParseJSON(resumen.resumen);
+        if (p) {
+          resumen.resumen = p.resumen || resumen.resumen;
+          resumen.calificacion = p.calificacion || resumen.calificacion;
+          resumen.proximo_enfoque = p.proximo_enfoque || resumen.proximo_enfoque;
+        }
+      }
       setSessionResumen(resumen);
       await guardarWorkout(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr, completado: true, resumenSesion: resumen.resumen || '' });
     } catch {
