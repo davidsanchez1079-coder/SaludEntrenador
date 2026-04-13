@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { chatSalud } from '../services/api';
-import { extractReadableText } from '../services/parseUtils';
 import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
 import LoadingDots from './LoadingDots';
@@ -26,9 +25,15 @@ export default function SaludChat({ usuarioId }) {
     setLoading(true);
     try {
       const res = await chatSalud(usuarioId, text);
+      let content = res.respuestaIA || 'Sin respuesta';
+      try {
+        let raw = content.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(raw);
+        content = parsed.respuesta || content;
+      } catch { /* ya es texto plano */ }
       const assistantMsg = {
         role: 'assistant',
-        content: extractReadableText(res.respuestaIA, 'respuesta') || 'Sin respuesta',
+        content,
         categoria: res.categoria,
         time: new Date().toLocaleTimeString(),
       };

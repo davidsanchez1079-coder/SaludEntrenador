@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { guardarWorkout, feedbackSerie, resumenSesion } from '../services/api';
-import { cleanAndParseJSON, extractReadableText } from '../services/parseUtils';
 import LoadingDots from './LoadingDots';
 
 const s = {
@@ -170,21 +169,18 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
 
     try {
       const rawResumen = await resumenSesion(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr });
-      // Parsear resumen que puede venir como string JSON con backticks
-      const resumen = {
-        resumen: extractReadableText(rawResumen.resumen, 'resumen') || rawResumen.resumen || '',
-        calificacion: rawResumen.calificacion || 'buena',
-        proximo_enfoque: rawResumen.proximo_enfoque || '',
-      };
-      // Si resumen.resumen sigue siendo JSON, intentar extraer
-      if (typeof resumen.resumen === 'string') {
-        const p = cleanAndParseJSON(resumen.resumen);
-        if (p) {
-          resumen.resumen = p.resumen || resumen.resumen;
-          resumen.calificacion = p.calificacion || resumen.calificacion;
-          resumen.proximo_enfoque = p.proximo_enfoque || resumen.proximo_enfoque;
-        }
-      }
+      // Parsear resumen: cada campo puede ser string JSON con backticks
+      const resumen = { resumen: '', calificacion: 'buena', proximo_enfoque: '' };
+      const fields = ['resumen', 'calificacion', 'proximo_enfoque'];
+      for (const f of fields) resumen[f] = rawResumen[f] || '';
+      // Intentar parsear el campo resumen si es JSON crudo
+      try {
+        let raw = (resumen.resumen || '').replace(/```json/g, '').replace(/```/g, '').trim();
+        const p = JSON.parse(raw);
+        resumen.resumen = p.resumen || resumen.resumen;
+        resumen.calificacion = p.calificacion || resumen.calificacion;
+        resumen.proximo_enfoque = p.proximo_enfoque || resumen.proximo_enfoque;
+      } catch { /* ya es texto plano */ }
       setSessionResumen(resumen);
       await guardarWorkout(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr, completado: true, resumenSesion: resumen.resumen || '' });
     } catch {
@@ -308,21 +304,45 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
             )}
 
             {/* Feedback de la IA */}
-            {set.feedback && (
-              <div style={{
-                ...s.feedbackBox,
-                background: (alertColors[set.feedback.alerta] || alertColors.ok).bg,
-                border: `1px solid ${(alertColors[set.feedback.alerta] || alertColors.ok).border}`,
-                color: (alertColors[set.feedback.alerta] || alertColors.ok).color,
-              }}>
-                {set.feedback.feedback}
-                {set.feedback.ajuste_siguiente_serie && (
-                  <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.8 }}>
-                    Siguiente serie: {set.feedback.ajuste_siguiente_serie.peso_sugerido}kg x {set.feedback.ajuste_siguiente_serie.reps_sugeridas}
-                  </span>
-                )}
-              </div>
-            )}
+            {set.feedback && (() => {
+              let feedbackText = '';
+              let alertType = 'ok';
+              let sugerido = null;
+              try {
+                const fb = set.feedback;
+                // fb puede ser: objeto parseado, o objeto con .feedback como string JSON
+                let raw = typeof fb === 'string' ? fb : (typeof fb.feedback === 'string' ? fb.feedback : '');
+                // Si raw parece JSON (con o sin backticks), parsearlo
+                if (raw.includes('{')) {
+                  raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+                  const parsed = JSON.parse(raw);
+                  feedbackText = parsed.feedback || raw;
+                  alertType = parsed.alerta || fb.alerta || 'ok';
+                  sugerido = parsed.ajuste_siguiente_serie || fb.ajuste_siguiente_serie || null;
+                } else {
+                  // fb ya es objeto limpio
+                  feedbackText = fb.feedback || String(fb);
+                  alertType = fb.alerta || 'ok';
+                  sugerido = fb.ajuste_siguiente_serie || null;
+                }
+              } catch {
+                const fb = set.feedback;
+                feedbackText = typeof fb === 'string' ? fb : (fb.feedback || String(fb));
+                alertType = (typeof fb === 'object' && fb.alerta) ? fb.alerta : 'ok';
+                sugerido = (typeof fb === 'object' && fb.ajuste_siguiente_serie) ? fb.ajuste_siguiente_serie : null;
+              }
+              const colors = alertColors[alertType] || alertColors.ok;
+              return (
+                <div style={{ ...s.feedbackBox, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color }}>
+                  {feedbackText}
+                  {sugerido && sugerido.peso_sugerido && (
+                    <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.8 }}>
+                      Siguiente serie: {sugerido.peso_sugerido}kg x {sugerido.reps_sugeridas}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         );
       })}

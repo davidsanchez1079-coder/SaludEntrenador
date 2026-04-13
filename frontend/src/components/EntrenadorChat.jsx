@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { chatEntrenador } from '../services/api';
-import { extractReadableText } from '../services/parseUtils';
 import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
 import LoadingDots from './LoadingDots';
@@ -25,11 +24,25 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
     setLoading(true);
     try {
       const res = await chatEntrenador(usuarioId, text);
+      let content = res.respuesta || 'Sin respuesta';
+      let consejo = res.consejo || null;
+      try {
+        let raw = content.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(raw);
+        content = parsed.respuesta || content;
+      } catch { /* ya es texto plano */ }
+      if (typeof consejo === 'string') {
+        try {
+          let raw = consejo.replace(/```json/g, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(raw);
+          consejo = parsed.consejo || consejo;
+        } catch { /* ya es texto plano */ }
+      }
       const assistantMsg = {
         role: 'assistant',
-        content: extractReadableText(res.respuesta, 'respuesta') || 'Sin respuesta',
+        content,
         rutina: res.rutina || null,
-        consejo: typeof res.consejo === 'string' ? extractReadableText(res.consejo, 'consejo') : (res.consejo || null),
+        consejo,
         time: new Date().toLocaleTimeString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
