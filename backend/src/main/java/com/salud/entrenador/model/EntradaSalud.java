@@ -24,7 +24,7 @@ public class EntradaSalud {
     @Enumerated(EnumType.STRING)
     private CategoriaSalud categoria;
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String textoOriginal;
 
     @Column(columnDefinition = "TEXT")
