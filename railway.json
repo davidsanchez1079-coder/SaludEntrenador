@@ -1,1 +1,1 @@
-{"build":{"builder":"NIXPACKS"},"deploy":{"startCommand":"cd backend && java -jar target/*.jar"}}
+{"build":{"builder":"NIXPACKS","buildCommand":"cd backend && mvn clean package -DskipTests"},"deploy":{"startCommand":"java -jar backend/target/entrenador-0.0.1-SNAPSHOT.jar","healthcheckPath":"/actuator/health"}}
