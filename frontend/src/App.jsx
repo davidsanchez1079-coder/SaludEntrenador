@@ -53,7 +53,7 @@ function App() {
   if (!loaded || !usuarioId) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0f0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-        {loaded ? 'Error conectando al backend. Verifica que este corriendo en localhost:8080' : 'Cargando...'}
+        {loaded ? 'Error conectando al servidor. Intenta recargar la página.' : 'Cargando...'}
       </div>
     );
   }
