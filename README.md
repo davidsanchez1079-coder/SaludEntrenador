@@ -1,6 +1,6 @@
 # SaludEntrenador
 
-Plataforma de salud y entrenamiento personal con inteligencia artificial. Permite a entrenadores personales y nutriologos gestionar perfiles de clientes, registrar informacion de salud, y generar rutinas de entrenamiento personalizadas usando la API de Claude (Anthropic).
+Plataforma de salud y entrenamiento personal con inteligencia artificial. Permite a entrenadores personales y nutriologos gestionar perfiles de clientes, registrar informacion de salud, y generar rutinas de entrenamiento personalizadas usando la API de OpenAI (GPT-4o).
 
 ## Arquitectura
 
@@ -16,8 +16,8 @@ Plataforma de salud y entrenamiento personal con inteligencia artificial. Permit
                              │  └─────────────────┘ │
                              │                       │
                              │  ┌─────────────────┐ │
-                             │  │ API Claude       │ │
-                             │  │ (Anthropic)      │ │
+                             │  │ API OpenAI       │ │
+                             │  │ (GPT-4o)         │ │
                              │  └─────────────────┘ │
                              └──────────────────────┘
 ```
@@ -30,7 +30,7 @@ Plataforma de salud y entrenamiento personal con inteligencia artificial. Permit
 - **Spring Data JPA** - Persistencia
 - **H2 Database** - Base de datos en memoria (desarrollo)
 - **Lombok** - Reduccion de boilerplate
-- **API Claude (Anthropic)** - Inteligencia artificial para salud y entrenamiento
+- **API OpenAI (GPT-4o)** - Inteligencia artificial para salud y entrenamiento
 
 ### Frontend
 - **React 19** - Biblioteca UI
@@ -58,7 +58,7 @@ SaludEntrenador/
 │       │   ├── EntradaSaludRepository.java
 │       │   └── EntrenamientoRepository.java
 │       ├── service/
-│       │   ├── ClaudeService.java      # Integracion API Anthropic
+│       │   ├── ClaudeService.java      # Integracion API OpenAI
 │       │   ├── UsuarioService.java     # Logica de perfiles
 │       │   ├── SaludService.java       # Chat salud + historial
 │       │   └── EntrenadorService.java  # Chat entrenador + rutinas
@@ -116,7 +116,7 @@ SaludEntrenador/
 ### Variables de Entorno
 
 ```bash
-export ANTHROPIC_API_KEY=tu_api_key_aqui
+export OPENAI_API_KEY=tu_api_key_aqui
 ```
 
 ### Backend
