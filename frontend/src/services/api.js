@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'https://saludentrenador-production.up.railway.app/api';
 
 async function request(path, options = {}) {
   const url = `${API_BASE}${path}`;
