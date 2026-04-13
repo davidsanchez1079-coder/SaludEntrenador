@@ -46,3 +46,13 @@ export const guardarWorkout = (usuarioId, workout) =>
   });
 export const getHistorialEntrenador = (usuarioId) =>
   request(`/entrenador/${usuarioId}/historial`);
+export const feedbackSerie = (usuarioId, datos) =>
+  request(`/entrenador/${usuarioId}/feedback-serie`, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  });
+export const resumenSesion = (usuarioId, datos) =>
+  request(`/entrenador/${usuarioId}/resumen-sesion`, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  });

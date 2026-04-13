@@ -29,7 +29,8 @@ public class UsuarioService {
         if (datosActualizados.getSexo() != null) usuario.setSexo(datosActualizados.getSexo());
         if (datosActualizados.getPesoInicial() != null) usuario.setPesoInicial(datosActualizados.getPesoInicial());
         if (datosActualizados.getEstatura() != null) usuario.setEstatura(datosActualizados.getEstatura());
-        if (datosActualizados.getObjetivo() != null) usuario.setObjetivo(datosActualizados.getObjetivo());
+        if (datosActualizados.getObjetivoGeneral() != null) usuario.setObjetivoGeneral(datosActualizados.getObjetivoGeneral());
+        if (datosActualizados.getObjetivoEspecifico() != null) usuario.setObjetivoEspecifico(datosActualizados.getObjetivoEspecifico());
         if (datosActualizados.getTelefono() != null) usuario.setTelefono(datosActualizados.getTelefono());
         if (datosActualizados.getCorreo() != null) usuario.setCorreo(datosActualizados.getCorreo());
         if (datosActualizados.getCondiciones() != null) usuario.setCondiciones(datosActualizados.getCondiciones());
@@ -53,7 +54,9 @@ public class UsuarioService {
         if (u.getSexo() != null) sb.append("- Sexo: ").append(u.getSexo()).append("\n");
         if (u.getPesoInicial() != null) sb.append("- Peso inicial: ").append(u.getPesoInicial()).append(" kg\n");
         if (u.getEstatura() != null) sb.append("- Estatura: ").append(u.getEstatura()).append(" cm\n");
-        if (u.getObjetivo() != null) sb.append("- Objetivo: ").append(u.getObjetivo()).append("\n");
+        if (u.getObjetivoGeneral() != null) sb.append("- Objetivo general: ").append(u.getObjetivoGeneral()).append("\n");
+        if (u.getObjetivoEspecifico() != null && !u.getObjetivoEspecifico().isBlank())
+            sb.append("- Objetivo especifico (PRIORIDAD): ").append(u.getObjetivoEspecifico()).append("\n");
         if (u.getCondiciones() != null && !u.getCondiciones().isBlank())
             sb.append("- Condiciones medicas: ").append(u.getCondiciones()).append("\n");
         if (u.getAlergias() != null && !u.getAlergias().isBlank())

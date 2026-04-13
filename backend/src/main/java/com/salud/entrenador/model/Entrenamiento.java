@@ -28,6 +28,9 @@ public class Entrenamiento {
 
     private Boolean completado;
 
+    @Column(columnDefinition = "TEXT")
+    private String resumenSesion;
+
     @PrePersist
     protected void onCreate() {
         if (this.fecha == null) {

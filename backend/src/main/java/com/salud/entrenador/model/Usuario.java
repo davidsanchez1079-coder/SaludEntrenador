@@ -26,7 +26,10 @@ public class Usuario {
 
     private Double estatura;
 
-    private String objetivo;
+    private String objetivoGeneral;
+
+    @Column(length = 500)
+    private String objetivoEspecifico;
 
     private String telefono;
 

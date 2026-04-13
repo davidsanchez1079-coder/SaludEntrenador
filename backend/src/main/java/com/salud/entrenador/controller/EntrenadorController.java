@@ -17,38 +17,36 @@ public class EntrenadorController {
 
     private final EntrenadorService entrenadorService;
 
-    /**
-     * POST /api/entrenador/{usuarioId}/chat
-     * Envia un mensaje al entrenador IA. Puede devolver rutina.
-     */
     @PostMapping("/{usuarioId}/chat")
     public ResponseEntity<Map<String, Object>> chat(
             @PathVariable Long usuarioId,
             @RequestBody Map<String, String> body) {
         String mensaje = body.get("mensaje");
-        if (mensaje == null || mensaje.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        Map<String, Object> resultado = entrenadorService.procesarMensaje(usuarioId, mensaje);
-        return ResponseEntity.ok(resultado);
+        if (mensaje == null || mensaje.isBlank()) return ResponseEntity.badRequest().build();
+        return ResponseEntity.ok(entrenadorService.procesarMensaje(usuarioId, mensaje));
     }
 
-    /**
-     * POST /api/entrenador/{usuarioId}/workout
-     * Guarda un entrenamiento completado.
-     */
+    @PostMapping("/{usuarioId}/feedback-serie")
+    public ResponseEntity<Map<String, Object>> feedbackSerie(
+            @PathVariable Long usuarioId,
+            @RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(entrenadorService.feedbackSerie(usuarioId, body));
+    }
+
+    @PostMapping("/{usuarioId}/resumen-sesion")
+    public ResponseEntity<Map<String, Object>> resumenSesion(
+            @PathVariable Long usuarioId,
+            @RequestBody Map<String, Object> body) {
+        return ResponseEntity.ok(entrenadorService.resumenSesion(usuarioId, body));
+    }
+
     @PostMapping("/{usuarioId}/workout")
     public ResponseEntity<Entrenamiento> guardarWorkout(
             @PathVariable Long usuarioId,
             @RequestBody Entrenamiento entrenamiento) {
-        Entrenamiento guardado = entrenadorService.guardarEntrenamiento(usuarioId, entrenamiento);
-        return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
+        return ResponseEntity.status(HttpStatus.CREATED).body(entrenadorService.guardarEntrenamiento(usuarioId, entrenamiento));
     }
 
-    /**
-     * GET /api/entrenador/{usuarioId}/historial
-     * Historial de entrenamientos del usuario.
-     */
     @GetMapping("/{usuarioId}/historial")
     public ResponseEntity<List<Entrenamiento>> historial(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(entrenadorService.obtenerHistorial(usuarioId));

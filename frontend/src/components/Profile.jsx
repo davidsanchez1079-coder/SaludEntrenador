@@ -16,7 +16,7 @@ const s = {
   progressBar: { height: '100%', background: '#4ade80', borderRadius: '3px', transition: 'width 0.3s' },
 };
 
-const fields = ['nombre', 'edad', 'sexo', 'pesoInicial', 'estatura', 'objetivo', 'telefono', 'correo', 'condiciones', 'alergias'];
+const fields = ['nombre', 'edad', 'sexo', 'pesoInicial', 'estatura', 'objetivoGeneral', 'objetivoEspecifico', 'telefono', 'correo', 'condiciones', 'alergias'];
 
 export default function Profile({ usuarioId }) {
   const [form, setForm] = useState({});
@@ -75,17 +75,20 @@ export default function Profile({ usuarioId }) {
             </select>
           </div>
           <div>
-            <label style={s.label}>Objetivo</label>
-            <select style={s.select} value={form.objetivo || ''} onChange={(e) => handleChange('objetivo', e.target.value)}>
+            <label style={s.label}>Objetivo General</label>
+            <select style={s.select} value={form.objetivoGeneral || ''} onChange={(e) => handleChange('objetivoGeneral', e.target.value)}>
               <option value="">Seleccionar</option>
-              <option value="Perdida de peso">Perdida de peso</option>
-              <option value="Ganancia muscular">Ganancia muscular</option>
-              <option value="Tonificacion">Tonificacion</option>
+              <option value="Ganar musculo">Ganar musculo</option>
+              <option value="Bajar grasa">Bajar grasa</option>
+              <option value="Tonificar">Tonificar</option>
+              <option value="Fuerza">Fuerza</option>
               <option value="Resistencia">Resistencia</option>
-              <option value="Flexibilidad">Flexibilidad</option>
-              <option value="Salud general">Salud general</option>
-              <option value="Rehabilitacion">Rehabilitacion</option>
+              <option value="Recomposicion corporal">Recomposicion corporal</option>
             </select>
+          </div>
+          <div style={s.gridFull}>
+            <label style={s.label}>Objetivo Especifico (TU PRIORIDAD)</label>
+            <input style={s.input} value={form.objetivoEspecifico || ''} onChange={(e) => handleChange('objetivoEspecifico', e.target.value)} placeholder="Ej: Crecer gluteo, Hombros mas anchos, Marcar abdomen, Brazos mas gruesos, Espalda ancha, Triceps definido, Piernas grandes, Core fuerte..." />
           </div>
         </div>
       </div>
