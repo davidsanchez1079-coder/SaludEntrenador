@@ -39,10 +39,9 @@ spring:
       on-profile: prod
 
   datasource:
-    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
-    driver-class-name: org.postgresql.Driver
-    username: ${PGUSER}
-    password: ${PGPASSWORD}
+    url: ${DATABASE_URL}
+    username: ${PGUSER:postgres}
+    password: ${PGPASSWORD:postgres}
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
