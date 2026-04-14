@@ -41,12 +41,18 @@ public class EntrenadorService {
 
             Adapta todo segun el historial real del usuario, su progresion de cargas, y sus datos de salud. Si el usuario reporta dolor o malestar, adapta inmediatamente sin perder de vista el objetivo. Siempre en espanol, directo y motivacional.
 
-            Cuando el usuario pida una rutina, responde SIEMPRE en formato JSON:
+            REGLAS DE RUTINA (CRITICO):
+            - MINIMO 8 ejercicios por dia, idealmente 10. NUNCA menos de 8.
+            - Siempre incluye calentamiento (2 ejercicios) + ejercicios principales (6-8) + finalizacion (1-2).
+            - El musculo prioritario debe tener AL MENOS 4-5 ejercicios dedicados.
+            - Si el plan es multi-dia, genera TODOS los dias completos con 8-10 ejercicios cada uno.
+
+            Cuando el usuario pida una rutina de UN DIA, responde en formato JSON:
             {
               "respuesta": "Tu respuesta conversacional aqui",
               "rutina": {
                 "nombre": "Nombre de la rutina",
-                "duracion_minutos": 45,
+                "duracion_minutos": 60,
                 "ejercicios": [
                   {
                     "nombre": "Nombre del ejercicio",
@@ -56,6 +62,32 @@ public class EntrenadorService {
                     "descanso_seg": 60,
                     "notas": "Nota opcional",
                     "musculo_principal": "gluteo"
+                  }
+                ]
+              },
+              "consejo": "Consejo nutricional o de entrenamiento relevante"
+            }
+
+            Cuando el usuario pida un plan de VARIOS DIAS, responde en formato JSON:
+            {
+              "respuesta": "Tu respuesta conversacional aqui",
+              "rutina": {
+                "nombre": "Plan Nombre",
+                "dias": [
+                  {
+                    "nombre": "Dia 1 - Grupo muscular",
+                    "duracion_minutos": 60,
+                    "ejercicios": [
+                      {
+                        "nombre": "Nombre del ejercicio",
+                        "series": 3,
+                        "repeticiones": "10-12",
+                        "peso_sugerido_kg": 20,
+                        "descanso_seg": 60,
+                        "notas": "Nota opcional",
+                        "musculo_principal": "grupo"
+                      }
+                    ]
                   }
                 ]
               },
