@@ -1,4 +1,6 @@
-const API_BASE = 'https://saludentrenador-production.up.railway.app/api';
+const API_BASE = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+  ? 'http://localhost:8080/api'
+  : 'https://saludentrenador-production.up.railway.app/api';
 
 async function request(path, options = {}) {
   const url = `${API_BASE}${path}`;
