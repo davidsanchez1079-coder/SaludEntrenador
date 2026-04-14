@@ -1,1 +1,10 @@
-{"build":{"builder":"DOCKERFILE","dockerfilePath":"Dockerfile"},"deploy":{"startCommand":"java -jar backend/target/entrenador-0.0.1-SNAPSHOT.jar","healthcheckTimeout":0}}
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "java -jar app.jar",
+    "healthcheckTimeout": 0
+  }
+}
