@@ -25,6 +25,8 @@ COPY --from=build /app/target/*.jar app.jar
 
 # Railway define PORT como variable de entorno
 ENV PORT=8080
+# Activar perfil de produccion (usa PostgreSQL con DATABASE_URL)
+ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
 
 # Ejecutar la aplicacion

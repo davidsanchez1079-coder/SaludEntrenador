@@ -5,6 +5,7 @@ spring:
   application:
     name: SaludEntrenador
 
+  # ===== PERFIL DEFAULT: H2 en archivo (desarrollo local) =====
   datasource:
     url: jdbc:h2:file:./data/saludentrenador
     driver-class-name: org.h2.Driver
@@ -29,3 +30,26 @@ openai:
   api-key: ${OPENAI_API_KEY:}
   model: gpt-4o
   max-tokens: 2000
+
+---
+# ===== PERFIL PROD: PostgreSQL (Railway, etc) =====
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: ${DATABASE_URL}
+    driver-class-name: org.postgresql.Driver
+    username: ${DATABASE_USERNAME:}
+    password: ${DATABASE_PASSWORD:}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  h2:
+    console:
+      enabled: false
