@@ -5,14 +5,14 @@ import Badge from './Badge';
 const categorias = ['', 'MEDICAMENTO', 'SINTOMA', 'MEDIDA', 'LABORATORIO', 'BIENESTAR', 'NUTRICION'];
 
 const s = {
-  filters: { display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
-  filterBtn: { padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px solid #2d3a35', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.8rem', fontFamily: "'DM Sans', sans-serif" },
-  filterActive: { background: '#1a2f24', color: '#4ade80', borderColor: '#4ade80' },
-  card: { background: '#111916', border: '1px solid #1e2d27', borderRadius: '10px', padding: '1rem', marginBottom: '0.75rem' },
-  date: { fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem' },
-  text: { fontSize: '0.9rem', color: '#e0e0e0', marginBottom: '0.5rem' },
-  response: { fontSize: '0.85rem', color: '#94a3b8', background: '#0a0f0d', padding: '0.75rem', borderRadius: '8px', marginTop: '0.5rem', whiteSpace: 'pre-wrap' },
-  empty: { textAlign: 'center', padding: '3rem', color: '#64748b' },
+  filters: { display: 'flex', gap: '0.4rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
+  filterBtn: { padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #2a2a2a', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '0.75rem', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 },
+  filterActive: { background: 'rgba(229,62,62,0.15)', color: '#E53E3E', borderColor: '#E53E3E' },
+  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '1rem', marginBottom: '0.75rem' },
+  date: { fontSize: '0.75rem', color: '#666' },
+  text: { fontSize: '0.9rem', color: '#f0f0f0', marginBottom: '0.5rem' },
+  response: { fontSize: '0.85rem', color: '#888', background: '#0a0a0a', padding: '0.75rem', borderRadius: '6px', marginTop: '0.5rem', whiteSpace: 'pre-wrap', borderLeft: '2px solid #E53E3E' },
+  empty: { textAlign: 'center', padding: '3rem', color: '#666' },
 };
 
 export default function SaludHistorial({ usuarioId }) {

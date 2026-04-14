@@ -8,7 +8,7 @@ import RoutineCard from './RoutineCard';
 const s = {
   container: { display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' },
   messages: { flex: 1, overflowY: 'auto', paddingBottom: '1rem' },
-  welcome: { textAlign: 'center', padding: '3rem 1rem', color: '#64748b' },
+  welcome: { textAlign: 'center', padding: '3rem 1rem', color: '#666' },
 };
 
 export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
@@ -57,8 +57,8 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
       <div style={s.messages}>
         {messages.length === 0 && (
           <div style={s.welcome}>
-            <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{'\u{1F3CB}'}</p>
-            <p style={{ fontSize: '1.1rem', color: '#94a3b8' }}>Entrenador Personal con IA</p>
+            <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{'\u{1F525}'}</p>
+            <p style={{ fontSize: '1.1rem', color: '#f0f0f0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Entrenador Personal IA</p>
             <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
               Pide una rutina, consejo de entrenamiento o plan nutricional personalizado.
             </p>
@@ -71,8 +71,8 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
               <RoutineCard rutina={msg.rutina} onStart={() => onStartWorkout && onStartWorkout(msg.rutina)} />
             )}
             {msg.consejo && (
-              <div style={{ background: '#1a2520', border: '1px solid #2d3a35', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#fbbf24' }}>
-                {'\u{1F4A1}'} {msg.consejo}
+              <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderLeft: '3px solid #E53E3E', borderRadius: '6px', padding: '0.75rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#f0f0f0' }}>
+                <strong style={{ color: '#E53E3E' }}>{'\u{1F4A1}'} CONSEJO:</strong> {msg.consejo}
               </div>
             )}
           </div>
@@ -80,7 +80,7 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
         {loading && <LoadingDots />}
         <div ref={endRef} />
       </div>
-      <ChatInput onSend={handleSend} color="#60a5fa" placeholder="Pideme una rutina o consejo de entrenamiento..." disabled={loading} />
+      <ChatInput onSend={handleSend} color="#E53E3E" placeholder="Pideme una rutina o consejo..." disabled={loading} />
     </div>
   );
 }

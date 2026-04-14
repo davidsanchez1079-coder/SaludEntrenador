@@ -12,9 +12,9 @@ import './App.css';
 const STORAGE_KEY = 'saludentrenador_usuario_id';
 
 const subTabStyle = {
-  container: { display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid #1e2d27', paddingBottom: '0.5rem' },
-  btn: { padding: '0.4rem 1rem', border: 'none', borderRadius: '6px 6px 0 0', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, fontFamily: "'DM Sans', sans-serif", borderBottom: '2px solid transparent' },
-  active: { color: '#4ade80', borderBottomColor: '#4ade80' },
+  container: { display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid #2a2a2a', paddingBottom: '0.5rem' },
+  btn: { padding: '0.45rem 1rem', border: 'none', borderRadius: '4px 4px 0 0', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", borderBottom: '2px solid transparent', textTransform: 'uppercase', letterSpacing: '1px' },
+  active: { color: '#E53E3E', borderBottomColor: '#E53E3E' },
 };
 
 async function getOrCreateUsuario() {
@@ -52,8 +52,8 @@ function App() {
 
   if (!loaded || !usuarioId) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0f0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-        {loaded ? 'Error conectando al servidor. Intenta recargar la página.' : 'Cargando...'}
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontFamily: "'DM Sans', sans-serif" }}>
+        {loaded ? 'Error conectando al servidor. Intenta recargar la pagina.' : 'Cargando...'}
       </div>
     );
   }

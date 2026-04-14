@@ -5,37 +5,41 @@ const styles = {
     display: 'flex',
     gap: '0.5rem',
     padding: '1rem 0',
-    borderTop: '1px solid #1e2d27',
+    borderTop: '1px solid #2a2a2a',
   },
   textarea: {
     flex: 1,
     padding: '0.75rem 1rem',
-    background: '#111916',
-    border: '1px solid #2d3a35',
-    borderRadius: '10px',
-    color: '#e0e0e0',
+    background: '#0a0a0a',
+    border: '1px solid #2a2a2a',
+    borderRadius: '6px',
+    color: '#f0f0f0',
     fontSize: '0.9rem',
     fontFamily: "'DM Sans', sans-serif",
     resize: 'none',
     outline: 'none',
     minHeight: '44px',
     maxHeight: '120px',
+    transition: 'border-color 0.2s',
   },
   button: {
-    padding: '0 1.25rem',
-    borderRadius: '10px',
+    padding: '0 1.5rem',
+    borderRadius: '6px',
     border: 'none',
-    fontWeight: 600,
-    fontSize: '0.9rem',
+    fontWeight: 700,
+    fontSize: '0.85rem',
     cursor: 'pointer',
     fontFamily: "'DM Sans', sans-serif",
-    transition: 'opacity 0.2s',
+    transition: 'all 0.2s',
     whiteSpace: 'nowrap',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
 };
 
-export default function ChatInput({ onSend, color = '#4ade80', placeholder = 'Escribe un mensaje...', disabled = false }) {
+export default function ChatInput({ onSend, color = '#E53E3E', placeholder = 'Escribe un mensaje...', disabled = false }) {
   const [text, setText] = useState('');
+  const [focused, setFocused] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -55,10 +59,12 @@ export default function ChatInput({ onSend, color = '#4ade80', placeholder = 'Es
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
       <textarea
-        style={styles.textarea}
+        style={{ ...styles.textarea, borderColor: focused ? '#E53E3E' : '#2a2a2a' }}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={placeholder}
         rows={1}
         disabled={disabled}
@@ -69,8 +75,8 @@ export default function ChatInput({ onSend, color = '#4ade80', placeholder = 'Es
         style={{
           ...styles.button,
           background: color,
-          color: '#0a0f0d',
-          opacity: disabled || !text.trim() ? 0.5 : 1,
+          color: '#fff',
+          opacity: disabled || !text.trim() ? 0.4 : 1,
         }}
       >
         Enviar

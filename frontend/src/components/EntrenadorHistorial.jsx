@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { getHistorialEntrenador } from '../services/api';
 
 const s = {
-  card: { background: '#111916', border: '1px solid #1e2d27', borderRadius: '10px', padding: '1rem', marginBottom: '0.75rem' },
+  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderLeft: '3px solid #E53E3E', borderRadius: '6px', padding: '1rem', marginBottom: '0.75rem' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' },
-  name: { fontSize: '0.95rem', fontWeight: 700, color: '#60a5fa' },
-  date: { fontSize: '0.75rem', color: '#64748b' },
-  status: { display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 },
-  completed: { background: '#052e16', color: '#4ade80' },
-  incomplete: { background: '#1c1517', color: '#f87171' },
-  empty: { textAlign: 'center', padding: '3rem', color: '#64748b' },
+  name: { fontSize: '0.95rem', fontWeight: 800, color: '#E53E3E', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  date: { fontSize: '0.75rem', color: '#666' },
+  status: { display: 'inline-block', padding: '2px 8px', borderRadius: '2px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' },
+  completed: { background: 'rgba(229,62,62,0.15)', color: '#E53E3E', border: '1px solid rgba(229,62,62,0.3)' },
+  incomplete: { background: '#2a2a2a', color: '#888' },
+  empty: { textAlign: 'center', padding: '3rem', color: '#666' },
 };
 
 export default function EntrenadorHistorial({ usuarioId }) {

@@ -16,7 +16,7 @@ export default function LoadingDots() {
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              background: '#4ade80',
+              background: '#E53E3E',
               animation: `bounce 1.4s infinite ease-in-out both`,
               animationDelay: `${i * 0.16}s`,
             }}

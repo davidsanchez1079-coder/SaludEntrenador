@@ -8,7 +8,7 @@ import Badge from './Badge';
 const s = {
   container: { display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' },
   messages: { flex: 1, overflowY: 'auto', paddingBottom: '1rem' },
-  welcome: { textAlign: 'center', padding: '3rem 1rem', color: '#64748b' },
+  welcome: { textAlign: 'center', padding: '3rem 1rem', color: '#666' },
   badgeWrap: { display: 'flex', justifyContent: 'flex-start', marginBottom: '0.25rem' },
 };
 
@@ -50,7 +50,7 @@ export default function SaludChat({ usuarioId }) {
         {messages.length === 0 && (
           <div style={s.welcome}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{'\u{1FA7A}'}</p>
-            <p style={{ fontSize: '1.1rem', color: '#94a3b8' }}>Asistente de Salud</p>
+            <p style={{ fontSize: '1.1rem', color: '#f0f0f0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Asistente de Salud</p>
             <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
               Comparte informacion sobre medicamentos, sintomas, medidas, resultados de laboratorio o nutricion.
             </p>
@@ -67,7 +67,7 @@ export default function SaludChat({ usuarioId }) {
         {loading && <LoadingDots />}
         <div ref={endRef} />
       </div>
-      <ChatInput onSend={handleSend} color="#4ade80" placeholder="Describe tu sintoma, medicamento, medida..." disabled={loading} />
+      <ChatInput onSend={handleSend} color="#E53E3E" placeholder="Describe tu sintoma, medicamento, medida..." disabled={loading} />
     </div>
   );
 }

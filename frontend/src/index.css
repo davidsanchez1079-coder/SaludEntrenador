@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   font-family: 'DM Sans', sans-serif;
@@ -8,5 +8,26 @@
 
 body {
   margin: 0;
-  background: #0a0f0d;
+  background: #0a0a0a;
+  color: #f0f0f0;
+}
+
+/* Scrollbar oscuro */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E53E3E;
+}
+
+/* Inputs y selects globales */
+input:focus, select:focus, textarea:focus {
+  border-color: #E53E3E !important;
 }
