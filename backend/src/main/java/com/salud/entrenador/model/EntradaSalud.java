@@ -1,5 +1,6 @@
 package com.salud.entrenador.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class EntradaSalud {
 
     @Id
@@ -17,6 +19,7 @@ public class EntradaSalud {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "entradasSalud", "entrenamientos"})
     private Usuario usuario;
 
     private LocalDateTime fecha;
