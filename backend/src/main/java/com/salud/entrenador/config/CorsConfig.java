@@ -16,8 +16,14 @@ public class CorsConfig {
                 registry.addMapping("/api/**")
                         .allowedOrigins(
                             "http://localhost:5173",
+                            "http://localhost:5174",
                             "http://127.0.0.1:5173",
-                            "https://salud-entrenador.vercel.app",
+                            "http://127.0.0.1:5174",
+                            "https://saludentrenador.netlify.app",
+                            "https://salud-entrenador.vercel.app"
+                        )
+                        .allowedOriginPatterns(
+                            "https://*.netlify.app",
                             "https://*.vercel.app"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
