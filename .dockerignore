@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+node_modules
+frontend
+backend/target
+backend/data
+*.log
+README.md
