@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { getHistorialEntrenador } from '../services/api';
 
 const s = {
-  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderLeft: '3px solid #E53E3E', borderRadius: '6px', padding: '1rem', marginBottom: '0.75rem' },
+  card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', borderRadius: '6px', padding: '1rem', marginBottom: '0.75rem' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' },
-  name: { fontSize: '0.95rem', fontWeight: 800, color: '#E53E3E', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  date: { fontSize: '0.75rem', color: '#666' },
+  name: { fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  date: { fontSize: '0.75rem', color: 'var(--text-dim)' },
   status: { display: 'inline-block', padding: '2px 8px', borderRadius: '2px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' },
-  completed: { background: 'rgba(229,62,62,0.15)', color: '#E53E3E', border: '1px solid rgba(229,62,62,0.3)' },
-  incomplete: { background: '#2a2a2a', color: '#888' },
-  empty: { textAlign: 'center', padding: '3rem', color: '#666' },
+  completed: { background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--accent-border)' },
+  incomplete: { background: 'var(--border)', color: 'var(--text-dim)' },
+  empty: { textAlign: 'center', padding: '3rem', color: 'var(--text-dim)' },
 };
 
 export default function EntrenadorHistorial({ usuarioId }) {

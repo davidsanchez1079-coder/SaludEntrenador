@@ -8,7 +8,7 @@ import RoutineCard from './RoutineCard';
 const s = {
   container: { display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' },
   messages: { flex: 1, overflowY: 'auto', paddingBottom: '1rem' },
-  welcome: { textAlign: 'center', padding: '3rem 1rem', color: '#666' },
+  welcome: { textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-dim)' },
 };
 
 export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
@@ -30,22 +30,15 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
         let raw = content.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(raw);
         content = parsed.respuesta || content;
-      } catch { /* ya es texto plano */ }
+      } catch { /* */ }
       if (typeof consejo === 'string') {
         try {
           let raw = consejo.replace(/```json/g, '').replace(/```/g, '').trim();
           const parsed = JSON.parse(raw);
           consejo = parsed.consejo || consejo;
-        } catch { /* ya es texto plano */ }
+        } catch { /* */ }
       }
-      const assistantMsg = {
-        role: 'assistant',
-        content,
-        rutina: res.rutina || null,
-        consejo,
-        time: new Date().toLocaleTimeString(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, { role: 'assistant', content, rutina: res.rutina || null, consejo, time: new Date().toLocaleTimeString() }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Error al comunicarse con el entrenador.', time: new Date().toLocaleTimeString() }]);
     }
@@ -58,21 +51,17 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
         {messages.length === 0 && (
           <div style={s.welcome}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{'\u{1F525}'}</p>
-            <p style={{ fontSize: '1.1rem', color: '#f0f0f0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Entrenador Personal IA</p>
-            <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
-              Pide una rutina, consejo de entrenamiento o plan nutricional personalizado.
-            </p>
+            <p style={{ fontSize: '1.1rem', color: 'var(--text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Entrenador Personal IA</p>
+            <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Pide una rutina, consejo de entrenamiento o plan nutricional personalizado.</p>
           </div>
         )}
         {messages.map((msg, i) => (
           <div key={i}>
             <ChatBubble role={msg.role} content={msg.content} timestamp={msg.time} />
-            {msg.rutina && (
-              <RoutineCard rutina={msg.rutina} onStart={() => onStartWorkout && onStartWorkout(msg.rutina)} />
-            )}
+            {msg.rutina && <RoutineCard rutina={msg.rutina} onStart={() => onStartWorkout && onStartWorkout(msg.rutina)} />}
             {msg.consejo && (
-              <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderLeft: '3px solid #E53E3E', borderRadius: '6px', padding: '0.75rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#f0f0f0' }}>
-                <strong style={{ color: '#E53E3E' }}>{'\u{1F4A1}'} CONSEJO:</strong> {msg.consejo}
+              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', borderRadius: '6px', padding: '0.75rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--text)' }}>
+                <strong style={{ color: 'var(--accent)' }}>{'\u{1F4A1}'} CONSEJO:</strong> {msg.consejo}
               </div>
             )}
           </div>
@@ -80,7 +69,7 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
         {loading && <LoadingDots />}
         <div ref={endRef} />
       </div>
-      <ChatInput onSend={handleSend} color="#E53E3E" placeholder="Pideme una rutina o consejo..." disabled={loading} />
+      <ChatInput onSend={handleSend} placeholder="Pideme una rutina o consejo..." disabled={loading} />
     </div>
   );
 }

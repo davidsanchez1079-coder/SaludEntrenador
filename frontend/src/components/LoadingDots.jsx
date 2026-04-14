@@ -10,17 +10,12 @@ export default function LoadingDots() {
       <style>{keyframes}</style>
       <div style={{ display: 'flex', gap: '4px', padding: '0.5rem 0', alignItems: 'center' }}>
         {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: '#E53E3E',
-              animation: `bounce 1.4s infinite ease-in-out both`,
-              animationDelay: `${i * 0.16}s`,
-            }}
-          />
+          <div key={i} style={{
+            width: '8px', height: '8px', borderRadius: '50%',
+            background: 'var(--accent)',
+            animation: `bounce 1.4s infinite ease-in-out both`,
+            animationDelay: `${i * 0.16}s`,
+          }} />
         ))}
       </div>
     </>

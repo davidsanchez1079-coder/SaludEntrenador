@@ -2,18 +2,18 @@ import { useState, useEffect } from 'react';
 import { getUsuario, updateUsuario } from '../services/api';
 
 const s = {
-  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem' },
-  title: { fontSize: '0.95rem', fontWeight: 800, color: '#E53E3E', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' },
+  card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem' },
+  title: { fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
   gridFull: { gridColumn: '1 / -1' },
-  label: { display: 'block', fontSize: '0.75rem', color: '#888', marginBottom: '6px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' },
-  input: { width: '100%', padding: '0.65rem 0.8rem', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#f0f0f0', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", outline: 'none', transition: 'border-color 0.2s' },
-  select: { width: '100%', padding: '0.65rem 0.8rem', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#f0f0f0', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", outline: 'none' },
-  textarea: { width: '100%', padding: '0.65rem 0.8rem', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#f0f0f0', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", outline: 'none', resize: 'vertical', minHeight: '60px' },
-  btn: { padding: '0.75rem 2.5rem', background: '#E53E3E', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '1px', transition: 'background 0.2s' },
-  msg: { padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '1rem' },
-  progress: { width: '100%', height: '4px', background: '#1a1a1a', borderRadius: '2px', marginBottom: '1.5rem', overflow: 'hidden' },
-  progressBar: { height: '100%', background: '#E53E3E', borderRadius: '2px', transition: 'width 0.3s' },
+  label: { display: 'block', fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '6px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' },
+  input: { width: '100%', padding: '0.65rem 0.8rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", outline: 'none' },
+  select: { width: '100%', padding: '0.65rem 0.8rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", outline: 'none' },
+  textarea: { width: '100%', padding: '0.65rem 0.8rem', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text)', fontSize: '0.9rem', fontFamily: "'DM Sans', sans-serif", outline: 'none', resize: 'vertical', minHeight: '60px' },
+  btn: { padding: '0.75rem 2.5rem', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '1px' },
+  msg: { padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '1rem', background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--accent-border)' },
+  progress: { width: '100%', height: '4px', background: 'var(--bg2)', borderRadius: '2px', marginBottom: '1.5rem', overflow: 'hidden' },
+  progressBar: { height: '100%', background: 'var(--accent)', borderRadius: '2px', transition: 'width 0.3s' },
 };
 
 const fields = ['nombre', 'edad', 'sexo', 'pesoInicial', 'estatura', 'objetivoGeneral', 'objetivoEspecifico', 'telefono', 'correo', 'condiciones', 'alergias'];
@@ -40,23 +40,14 @@ export default function Profile({ usuarioId }) {
       const updated = await updateUsuario(usuarioId, form);
       setForm(updated);
       setMessage({ type: 'success', text: 'Perfil guardado correctamente' });
-    } catch {
-      setMessage({ type: 'error', text: 'Error al guardar' });
-    }
+    } catch { setMessage({ type: 'error', text: 'Error al guardar' }); }
     setSaving(false);
   };
 
   return (
     <form onSubmit={handleSave}>
-      <div style={s.progress}>
-        <div style={{ ...s.progressBar, width: `${progress}%` }} />
-      </div>
-
-      {message && (
-        <div style={{ ...s.msg, background: message.type === 'success' ? '#2a0a0a' : '#2a0a0a', color: message.type === 'success' ? '#E53E3E' : '#f87171', border: `1px solid ${message.type === 'success' ? '#E53E3E' : '#7f1d1d'}` }}>
-          {message.text}
-        </div>
-      )}
+      <div style={s.progress}><div style={{ ...s.progressBar, width: `${progress}%` }} /></div>
+      {message && <div style={s.msg}>{message.text}</div>}
 
       <div style={s.card}>
         <div style={s.title}>{'\u{1F464}'} Datos Personales</div>
@@ -68,10 +59,8 @@ export default function Profile({ usuarioId }) {
           <div>
             <label style={s.label}>Sexo</label>
             <select style={s.select} value={form.sexo || ''} onChange={(e) => handleChange('sexo', e.target.value)}>
-              <option value="">Seleccionar</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Femenino">Femenino</option>
-              <option value="Otro">Otro</option>
+              <option value="">Seleccionar</option><option value="Masculino">Masculino</option>
+              <option value="Femenino">Femenino</option><option value="Otro">Otro</option>
             </select>
           </div>
           <div>
@@ -88,7 +77,7 @@ export default function Profile({ usuarioId }) {
           </div>
           <div style={s.gridFull}>
             <label style={s.label}>Objetivo Especifico (TU PRIORIDAD)</label>
-            <input style={s.input} value={form.objetivoEspecifico || ''} onChange={(e) => handleChange('objetivoEspecifico', e.target.value)} placeholder="Ej: Crecer gluteo, Hombros mas anchos, Marcar abdomen, Brazos mas gruesos, Espalda ancha, Triceps definido, Piernas grandes, Core fuerte..." />
+            <input style={s.input} value={form.objetivoEspecifico || ''} onChange={(e) => handleChange('objetivoEspecifico', e.target.value)} placeholder="Ej: Crecer gluteo, Hombros mas anchos, Marcar abdomen..." />
           </div>
         </div>
       </div>

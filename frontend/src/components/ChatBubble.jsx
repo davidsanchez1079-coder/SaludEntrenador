@@ -1,8 +1,5 @@
 const styles = {
-  wrapper: {
-    display: 'flex',
-    marginBottom: '0.75rem',
-  },
+  wrapper: { display: 'flex', marginBottom: '0.75rem' },
   bubble: {
     maxWidth: '80%',
     padding: '0.75rem 1rem',
@@ -13,23 +10,19 @@ const styles = {
     wordBreak: 'break-word',
   },
   user: {
-    background: '#E53E3E',
-    color: '#fff',
+    background: 'var(--user-msg-bg)',
+    color: 'var(--user-msg-text)',
     marginLeft: 'auto',
     borderBottomRightRadius: '4px',
   },
   assistant: {
-    background: '#1a1a1a',
-    color: '#f0f0f0',
+    background: 'var(--assistant-msg-bg)',
+    color: 'var(--assistant-msg-text)',
     marginRight: 'auto',
     borderBottomLeftRadius: '4px',
-    border: '1px solid #2a2a2a',
+    border: '1px solid var(--border)',
   },
-  timestamp: {
-    fontSize: '0.7rem',
-    color: '#666',
-    marginTop: '0.25rem',
-  },
+  timestamp: { fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '0.25rem' },
 };
 
 export default function ChatBubble({ role, content, timestamp }) {

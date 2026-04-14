@@ -8,7 +8,7 @@ import Badge from './Badge';
 const s = {
   container: { display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)' },
   messages: { flex: 1, overflowY: 'auto', paddingBottom: '1rem' },
-  welcome: { textAlign: 'center', padding: '3rem 1rem', color: '#666' },
+  welcome: { textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-dim)' },
   badgeWrap: { display: 'flex', justifyContent: 'flex-start', marginBottom: '0.25rem' },
 };
 
@@ -30,14 +30,8 @@ export default function SaludChat({ usuarioId }) {
         let raw = content.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(raw);
         content = parsed.respuesta || content;
-      } catch { /* ya es texto plano */ }
-      const assistantMsg = {
-        role: 'assistant',
-        content,
-        categoria: res.categoria,
-        time: new Date().toLocaleTimeString(),
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
+      } catch { /* */ }
+      setMessages((prev) => [...prev, { role: 'assistant', content, categoria: res.categoria, time: new Date().toLocaleTimeString() }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Error al comunicarse con el servidor.', time: new Date().toLocaleTimeString() }]);
     }
@@ -50,7 +44,7 @@ export default function SaludChat({ usuarioId }) {
         {messages.length === 0 && (
           <div style={s.welcome}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{'\u{1FA7A}'}</p>
-            <p style={{ fontSize: '1.1rem', color: '#f0f0f0', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Asistente de Salud</p>
+            <p style={{ fontSize: '1.1rem', color: 'var(--text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Asistente de Salud</p>
             <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
               Comparte informacion sobre medicamentos, sintomas, medidas, resultados de laboratorio o nutricion.
             </p>
@@ -58,16 +52,14 @@ export default function SaludChat({ usuarioId }) {
         )}
         {messages.map((msg, i) => (
           <div key={i}>
-            {msg.categoria && (
-              <div style={s.badgeWrap}><Badge categoria={msg.categoria} /></div>
-            )}
+            {msg.categoria && <div style={s.badgeWrap}><Badge categoria={msg.categoria} /></div>}
             <ChatBubble role={msg.role} content={msg.content} timestamp={msg.time} />
           </div>
         ))}
         {loading && <LoadingDots />}
         <div ref={endRef} />
       </div>
-      <ChatInput onSend={handleSend} color="#E53E3E" placeholder="Describe tu sintoma, medicamento, medida..." disabled={loading} />
+      <ChatInput onSend={handleSend} placeholder="Describe tu sintoma, medicamento, medida..." disabled={loading} />
     </div>
   );
 }

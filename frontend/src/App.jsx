@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getUsuario, createUsuario } from './services/api';
+import { getInitialTheme, applyTheme } from './theme';
 import Layout from './components/Layout';
 import Profile from './components/Profile';
 import SaludChat from './components/SaludChat';
@@ -12,30 +13,26 @@ import './App.css';
 const STORAGE_KEY = 'saludentrenador_usuario_id';
 
 const subTabStyle = {
-  container: { display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid #2a2a2a', paddingBottom: '0.5rem' },
-  btn: { padding: '0.45rem 1rem', border: 'none', borderRadius: '4px 4px 0 0', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", borderBottom: '2px solid transparent', textTransform: 'uppercase', letterSpacing: '1px' },
-  active: { color: '#E53E3E', borderBottomColor: '#E53E3E' },
+  container: { display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' },
+  btn: { padding: '0.45rem 1rem', border: 'none', borderRadius: '4px 4px 0 0', background: 'transparent', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", borderBottom: '2px solid transparent', textTransform: 'uppercase', letterSpacing: '1px' },
+  active: { color: 'var(--accent)', borderBottomColor: 'var(--accent)' },
 };
 
 async function getOrCreateUsuario() {
-  // Intentar cargar ID de localStorage
   const savedId = localStorage.getItem(STORAGE_KEY);
   if (savedId) {
     try {
       const user = await getUsuario(Number(savedId));
       return user.id;
-    } catch {
-      // ID guardado ya no existe, crear nuevo
-    }
+    } catch { /* ID guardado ya no existe */ }
   }
-
-  // Crear usuario nuevo
   const newUser = await createUsuario({ nombre: 'Mi Perfil' });
   localStorage.setItem(STORAGE_KEY, String(newUser.id));
   return newUser.id;
 }
 
 function App() {
+  const [theme, setTheme] = useState(getInitialTheme);
   const [usuarioId, setUsuarioId] = useState(null);
   const [activeTab, setActiveTab] = useState('perfil');
   const [saludSubTab, setSaludSubTab] = useState('chat');
@@ -44,22 +41,27 @@ function App() {
   const [saludConnected, setSaludConnected] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
+  // Aplicar tema al montar y cuando cambie
+  useEffect(() => { applyTheme(theme); }, [theme]);
+
   useEffect(() => {
     getOrCreateUsuario()
       .then((id) => { setUsuarioId(id); setSaludConnected(true); setLoaded(true); })
       .catch(() => setLoaded(true));
   }, []);
 
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+
   if (!loaded || !usuarioId) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>
         {loaded ? 'Error conectando al servidor. Intenta recargar la pagina.' : 'Cargando...'}
       </div>
     );
   }
 
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab} saludConnected={saludConnected}>
+    <Layout activeTab={activeTab} onTabChange={setActiveTab} saludConnected={saludConnected} theme={theme} onToggleTheme={toggleTheme}>
       {activeTab === 'perfil' && <Profile usuarioId={usuarioId} />}
 
       {activeTab === 'salud' && (
