@@ -12,6 +12,19 @@ const s = {
   welcome: { textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-dim)' },
 };
 
+// Intenta extraer JSON de un string que puede contener JSON embebido
+function extractJSON(str) {
+  if (!str) return null;
+  try { return JSON.parse(str); } catch {}
+  // Buscar JSON entre llaves
+  const start = str.indexOf('{');
+  const end = str.lastIndexOf('}');
+  if (start !== -1 && end !== -1) {
+    try { return JSON.parse(str.slice(start, end + 1)); } catch {}
+  }
+  return null;
+}
+
 export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -26,21 +39,36 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
     setLoading(true);
     try {
       const res = await chatEntrenador(usuarioId, text);
-      let content = res.respuesta || 'Sin respuesta';
+
+      let content = res.respuesta || '';
+      let rutina = res.rutina || null;
       let consejo = res.consejo || null;
-      try {
-        let raw = content.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(raw);
-        content = parsed.respuesta || content;
-      } catch { /* */ }
-      if (typeof consejo === 'string') {
-        try {
-          let raw = consejo.replace(/```json/g, '').replace(/```/g, '').trim();
-          const parsed = JSON.parse(raw);
-          consejo = parsed.consejo || consejo;
-        } catch { /* */ }
+
+      // Si el content tiene JSON embebido, extraerlo
+      if (!rutina && content) {
+        const parsed = extractJSON(content);
+        if (parsed) {
+          if (parsed.respuesta) content = parsed.respuesta;
+          if (parsed.rutina) rutina = parsed.rutina;
+          if (parsed.consejo) consejo = parsed.consejo;
+        }
       }
-      setMessages((prev) => [...prev, { role: 'assistant', content, rutina: res.rutina || null, consejo, time: new Date().toLocaleTimeString() }]);
+
+      // Si rutina es string, parsearlo
+      if (typeof rutina === 'string') {
+        const pr = extractJSON(rutina);
+        if (pr) rutina = pr;
+      }
+
+      if (!content) content = 'Sin respuesta';
+
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content,
+        rutina,
+        consejo,
+        time: new Date().toLocaleTimeString()
+      }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Error al comunicarse con el entrenador.', time: new Date().toLocaleTimeString() }]);
     }
