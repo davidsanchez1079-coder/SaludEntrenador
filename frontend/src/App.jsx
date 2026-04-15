@@ -13,6 +13,19 @@ import './App.css';
 const STORAGE_KEY = 'saludentrenador_usuario_id';
 const STORAGE_EMAIL_KEY = 'saludentrenador_usuario_correo';
 
+
+const alertStyle = {
+  marginBottom: '1rem',
+  padding: '0.9rem 1rem',
+  borderRadius: '10px',
+  background: 'rgba(255, 193, 7, 0.12)',
+  border: '1px solid rgba(255, 193, 7, 0.35)',
+  color: 'var(--text)',
+  fontFamily: "'DM Sans', sans-serif",
+  fontSize: '0.92rem',
+  lineHeight: 1.45,
+};
+
 const subTabStyle = {
   container: { display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
   left: { display: 'flex', gap: '0.25rem' },
@@ -56,12 +69,13 @@ function App() {
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [saludConnected, setSaludConnected] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [usuario, setUsuario] = useState(null);
 
   useEffect(() => { applyTheme(theme); }, [theme]);
 
   useEffect(() => {
     getOrCreateUsuario()
-      .then((id) => { setUsuarioId(id); setSaludConnected(true); setLoaded(true); })
+      .then(async (id) => { const user = await getUsuario(id); setUsuarioId(id); setUsuario(user); setSaludConnected(true); setLoaded(true); })
       .catch(() => setLoaded(true));
   }, []);
 
@@ -74,11 +88,12 @@ function App() {
 
   return (
     <Layout activeTab={activeTab} onTabChange={setActiveTab} saludConnected={saludConnected} theme={theme} onToggleTheme={toggleTheme}>
-      {activeTab === 'perfil' && <Profile usuarioId={usuarioId} />}
+      {activeTab === 'perfil' && <Profile usuarioId={usuarioId} onProfileSaved={setUsuario} />}
       {activeTab === 'salud' && (<><div style={subTabStyle.container}><div style={subTabStyle.left}><button style={{ ...subTabStyle.btn, ...(saludSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('chat')}>Chat</button><button style={{ ...subTabStyle.btn, ...(saludSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('historial')}>Historial</button></div></div>{saludSubTab === 'chat' && <SaludChat usuarioId={usuarioId} />}{saludSubTab === 'historial' && <SaludHistorial usuarioId={usuarioId} />}</>)}
-      {activeTab === 'entrenador' && (<>{activeWorkout ? (<ActiveWorkout rutina={activeWorkout} usuarioId={usuarioId} onFinish={() => { setActiveWorkout(null); setEntrenadorSubTab('historial'); }} />) : (<><div style={subTabStyle.container}><div style={subTabStyle.left}><button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('chat')}>Chat</button><button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('historial')}>Historial</button></div><button style={subTabStyle.primary} onClick={startNewWorkout}>🔥 Iniciar nuevo entrenamiento</button></div>{entrenadorSubTab === 'chat' && <EntrenadorChat usuarioId={usuarioId} onStartWorkout={setActiveWorkout} />}{entrenadorSubTab === 'historial' && <EntrenadorHistorial usuarioId={usuarioId} />}</>)}</>)}
+      {activeTab === 'entrenador' && (<>{!usuario?.correo && (<div style={alertStyle}><strong>Importante:</strong> para guardar tu información por usuario y no perderla con actualizaciones, cambio de navegador o dispositivo, necesitas logearte y confirmar tu correo en <strong>Perfil</strong>.</div>)}{activeWorkout ? (<ActiveWorkout rutina={activeWorkout} usuarioId={usuarioId} onFinish={() => { setActiveWorkout(null); setEntrenadorSubTab('historial'); }} />) : (<><div style={subTabStyle.container}><div style={subTabStyle.left}><button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('chat')}>Chat</button><button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('historial')}>Historial</button></div><button style={subTabStyle.primary} onClick={startNewWorkout}>🔥 Iniciar nuevo entrenamiento</button></div>{entrenadorSubTab === 'chat' && <EntrenadorChat usuarioId={usuarioId} onStartWorkout={setActiveWorkout} />}{entrenadorSubTab === 'historial' && <EntrenadorHistorial usuarioId={usuarioId} />}</>)}</>)}
     </Layout>
   );
 }
 
 export default App;
+
