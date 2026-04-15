@@ -12,17 +12,23 @@ const s = {
   welcome: { textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-dim)' },
 };
 
-// Intenta extraer JSON de un string que puede contener JSON embebido
 function extractJSON(str) {
-  if (!str) return null;
+  if (!str || typeof str !== 'string') return null;
   try { return JSON.parse(str); } catch {}
-  // Buscar JSON entre llaves
-  const start = str.indexOf('{');
-  const end = str.lastIndexOf('}');
-  if (start !== -1 && end !== -1) {
-    try { return JSON.parse(str.slice(start, end + 1)); } catch {}
+  const cleaned = str.replace(/```json/gi, '').replace(/```/g, '').trim();
+  try { return JSON.parse(cleaned); } catch {}
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    try { return JSON.parse(cleaned.slice(start, end + 1)); } catch {}
   }
   return null;
+}
+
+function looksLikeRawJson(str) {
+  if (!str || typeof str !== 'string') return false;
+  const t = str.trim();
+  return t.startsWith('{') && t.includes('"rutina"');
 }
 
 export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
@@ -39,28 +45,35 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
     setLoading(true);
     try {
       const res = await chatEntrenador(usuarioId, text);
+      let content = res?.respuesta || '';
+      let rutina = res?.rutina || null;
+      let consejo = res?.consejo || null;
 
-      let content = res.respuesta || '';
-      let rutina = res.rutina || null;
-      let consejo = res.consejo || null;
-
-      // Si el content tiene JSON embebido, extraerlo
-      if (!rutina && content) {
-        const parsed = extractJSON(content);
-        if (parsed) {
-          if (parsed.respuesta) content = parsed.respuesta;
-          if (parsed.rutina) rutina = parsed.rutina;
-          if (parsed.consejo) consejo = parsed.consejo;
-        }
+      const parsedContent = extractJSON(content);
+      if (parsedContent) {
+        content = parsedContent.respuesta || content;
+        rutina = parsedContent.rutina || rutina;
+        consejo = parsedContent.consejo || consejo;
       }
 
-      // Si rutina es string, parsearlo
       if (typeof rutina === 'string') {
-        const pr = extractJSON(rutina);
-        if (pr) rutina = pr;
+        const parsedRutina = extractJSON(rutina);
+        if (parsedRutina) rutina = parsedRutina;
       }
 
-      if (!content) content = 'Sin respuesta';
+      if (typeof consejo === 'string') {
+        const parsedConsejo = extractJSON(consejo);
+        if (parsedConsejo?.consejo) consejo = parsedConsejo.consejo;
+      }
+
+      if (looksLikeRawJson(content)) {
+        const parsed = extractJSON(content);
+        content = parsed?.respuesta || 'Aquí tienes tu plan de entrenamiento.';
+      }
+
+      if (!content || looksLikeRawJson(content)) {
+        content = rutina ? 'Aquí tienes tu plan de entrenamiento.' : 'Sin respuesta';
+      }
 
       setMessages((prev) => [...prev, {
         role: 'assistant',
@@ -89,10 +102,7 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔥</p>
             <p style={{ fontSize: '1.1rem', color: 'var(--text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Entrenador Personal IA</p>
             <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Pide una rutina, consejo de entrenamiento o plan nutricional personalizado.</p>
-            <button
-              onClick={() => setShowOnboarding(true)}
-              style={{ marginTop: '1.5rem', padding: '0.75rem 1.5rem', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit', textTransform: 'uppercase', letterSpacing: '1px' }}
-            >
+            <button onClick={() => setShowOnboarding(true)} style={{ marginTop: '1.5rem', padding: '0.75rem 1.5rem', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit', textTransform: 'uppercase', letterSpacing: '1px' }}>
               🏋️ Crear mi Plan Personalizado
             </button>
           </div>
@@ -102,8 +112,7 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
             <ChatBubble role={msg.role} content={msg.content} timestamp={msg.time} />
             {msg.rutina && <RoutineCard rutina={msg.rutina} onStart={() => onStartWorkout && onStartWorkout(msg.rutina)} />}
             {msg.consejo && (
-              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', borderRadius: '6px',
-                padding: '0.75rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', borderRadius: '6px', padding: '0.75rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--text-dim)' }}>
                 <span style={{ fontWeight: 700, color: 'var(--accent)' }}>💡 Consejo: </span>{msg.consejo}
               </div>
             )}
