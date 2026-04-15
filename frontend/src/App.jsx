@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getUsuario, createUsuario } from './services/api';
+import { getUsuario, getUsuarioPorCorreo, createUsuario } from './services/api';
 import { getInitialTheme, applyTheme } from './theme';
 import Layout from './components/Layout';
 import Profile from './components/Profile';
@@ -11,6 +11,7 @@ import ActiveWorkout from './components/ActiveWorkout';
 import './App.css';
 
 const STORAGE_KEY = 'saludentrenador_usuario_id';
+const STORAGE_EMAIL_KEY = 'saludentrenador_usuario_correo';
 
 const subTabStyle = {
   container: { display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
@@ -22,14 +23,27 @@ const subTabStyle = {
 
 async function getOrCreateUsuario() {
   const savedId = localStorage.getItem(STORAGE_KEY);
+  const savedEmail = localStorage.getItem(STORAGE_EMAIL_KEY);
+
   if (savedId) {
     try {
       const user = await getUsuario(Number(savedId));
+      if (user?.correo) localStorage.setItem(STORAGE_EMAIL_KEY, user.correo);
       return user.id;
     } catch {}
   }
+
+  if (savedEmail) {
+    try {
+      const user = await getUsuarioPorCorreo(savedEmail);
+      localStorage.setItem(STORAGE_KEY, String(user.id));
+      return user.id;
+    } catch {}
+  }
+
   const newUser = await createUsuario({ nombre: 'Mi Perfil' });
   localStorage.setItem(STORAGE_KEY, String(newUser.id));
+  if (newUser?.correo) localStorage.setItem(STORAGE_EMAIL_KEY, newUser.correo);
   return newUser.id;
 }
 
@@ -52,56 +66,17 @@ function App() {
   }, []);
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-  const startNewWorkout = () => {
-    setActiveWorkout(null);
-    setEntrenadorSubTab('chat');
-    setActiveTab('entrenador');
-  };
+  const startNewWorkout = () => { setActiveWorkout(null); setEntrenadorSubTab('chat'); setActiveTab('entrenador'); };
 
   if (!loaded || !usuarioId) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>
-        {loaded ? 'Error conectando al servidor. Intenta recargar la pagina.' : 'Cargando...'}
-      </div>
-    );
+    return <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontFamily: "'DM Sans', sans-serif" }}>{loaded ? 'Error conectando al servidor. Intenta recargar la pagina.' : 'Cargando...'}</div>;
   }
 
   return (
     <Layout activeTab={activeTab} onTabChange={setActiveTab} saludConnected={saludConnected} theme={theme} onToggleTheme={toggleTheme}>
       {activeTab === 'perfil' && <Profile usuarioId={usuarioId} />}
-
-      {activeTab === 'salud' && (
-        <>
-          <div style={subTabStyle.container}>
-            <div style={subTabStyle.left}>
-              <button style={{ ...subTabStyle.btn, ...(saludSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('chat')}>Chat</button>
-              <button style={{ ...subTabStyle.btn, ...(saludSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('historial')}>Historial</button>
-            </div>
-          </div>
-          {saludSubTab === 'chat' && <SaludChat usuarioId={usuarioId} />}
-          {saludSubTab === 'historial' && <SaludHistorial usuarioId={usuarioId} />}
-        </>
-      )}
-
-      {activeTab === 'entrenador' && (
-        <>
-          {activeWorkout ? (
-            <ActiveWorkout rutina={activeWorkout} usuarioId={usuarioId} onFinish={() => { setActiveWorkout(null); setEntrenadorSubTab('historial'); }} />
-          ) : (
-            <>
-              <div style={subTabStyle.container}>
-                <div style={subTabStyle.left}>
-                  <button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('chat')}>Chat</button>
-                  <button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('historial')}>Historial</button>
-                </div>
-                <button style={subTabStyle.primary} onClick={startNewWorkout}>🔥 Iniciar nuevo entrenamiento</button>
-              </div>
-              {entrenadorSubTab === 'chat' && <EntrenadorChat usuarioId={usuarioId} onStartWorkout={setActiveWorkout} />}
-              {entrenadorSubTab === 'historial' && <EntrenadorHistorial usuarioId={usuarioId} />}
-            </>
-          )}
-        </>
-      )}
+      {activeTab === 'salud' && (<><div style={subTabStyle.container}><div style={subTabStyle.left}><button style={{ ...subTabStyle.btn, ...(saludSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('chat')}>Chat</button><button style={{ ...subTabStyle.btn, ...(saludSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setSaludSubTab('historial')}>Historial</button></div></div>{saludSubTab === 'chat' && <SaludChat usuarioId={usuarioId} />}{saludSubTab === 'historial' && <SaludHistorial usuarioId={usuarioId} />}</>)}
+      {activeTab === 'entrenador' && (<>{activeWorkout ? (<ActiveWorkout rutina={activeWorkout} usuarioId={usuarioId} onFinish={() => { setActiveWorkout(null); setEntrenadorSubTab('historial'); }} />) : (<><div style={subTabStyle.container}><div style={subTabStyle.left}><button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'chat' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('chat')}>Chat</button><button style={{ ...subTabStyle.btn, ...(entrenadorSubTab === 'historial' ? subTabStyle.active : {}) }} onClick={() => setEntrenadorSubTab('historial')}>Historial</button></div><button style={subTabStyle.primary} onClick={startNewWorkout}>🔥 Iniciar nuevo entrenamiento</button></div>{entrenadorSubTab === 'chat' && <EntrenadorChat usuarioId={usuarioId} onStartWorkout={setActiveWorkout} />}{entrenadorSubTab === 'historial' && <EntrenadorHistorial usuarioId={usuarioId} />}</>)}</>)}
     </Layout>
   );
 }
