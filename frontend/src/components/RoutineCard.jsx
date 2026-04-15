@@ -11,6 +11,44 @@ const s = {
   btn: { marginTop: "0.75rem", width: "100%", padding: "0.7rem", background: "var(--accent)", color: "#fff", border: "none", borderRadius: "6px", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "1px" },
 };
 
+function normalizeExercise(ej) {
+  return {
+    nombre: ej?.nombre || ej?.ejercicio || ej?.name || 'Ejercicio',
+    series: ej?.series || ej?.sets || ej?.set || '-',
+    repeticiones: ej?.repeticiones || ej?.reps || ej?.repeticiones_objetivo || '-',
+    descanso_seg: ej?.descanso_seg || ej?.descanso || ej?.rest || '-',
+  };
+}
+
+function normalizeRoutine(input) {
+  if (!input || typeof input !== 'object') return null;
+
+  const rutina = input.rutina && typeof input.rutina === 'object' ? input.rutina : input;
+  const dias = rutina.dias || rutina.plan || rutina.semanal || rutina.workout_days;
+  const ejercicios = rutina.ejercicios || rutina.exercises || rutina.workout;
+
+  if (Array.isArray(dias)) {
+    return {
+      nombre: rutina.nombre || rutina.titulo || rutina.nombre_rutina || 'Plan de Entrenamiento',
+      dias: dias.map((dia, i) => ({
+        nombre: dia?.nombre || dia?.dia || dia?.titulo || `Día ${i + 1}`,
+        duracion_minutos: dia?.duracion_minutos || dia?.duracion || dia?.duration_minutes || null,
+        ejercicios: Array.isArray(dia?.ejercicios || dia?.exercises) ? (dia.ejercicios || dia.exercises).map(normalizeExercise) : [],
+      })),
+    };
+  }
+
+  if (Array.isArray(ejercicios)) {
+    return {
+      nombre: rutina.nombre || rutina.titulo || rutina.nombre_rutina || 'Rutina',
+      duracion_minutos: rutina.duracion_minutos || rutina.duracion || rutina.duration_minutes || null,
+      ejercicios: ejercicios.map(normalizeExercise),
+    };
+  }
+
+  return null;
+}
+
 function EjerciciosList({ ejercicios }) {
   if (!ejercicios || ejercicios.length === 0) return null;
   return (
@@ -26,7 +64,7 @@ function EjerciciosList({ ejercicios }) {
           <span style={s.name}>{ej.nombre}</span>
           <span style={s.value}>{ej.series}</span>
           <span style={s.value}>{ej.repeticiones}</span>
-          <span style={s.value}>{ej.descanso_seg}s</span>
+          <span style={s.value}>{String(ej.descanso_seg).includes('s') ? ej.descanso_seg : `${ej.descanso_seg}s`}</span>
         </div>
       ))}
     </>
@@ -34,37 +72,35 @@ function EjerciciosList({ ejercicios }) {
 }
 
 export default function RoutineCard({ rutina, onStart }) {
-  if (!rutina) return null;
+  const normalized = normalizeRoutine(rutina);
+  if (!normalized) return null;
 
-  // Rutina con multiples dias
-  if (rutina.dias && Array.isArray(rutina.dias)) {
+  if (normalized.dias && Array.isArray(normalized.dias)) {
     return (
       <div style={s.card}>
         <div style={s.header}>
-          <span style={s.title}>📋 {rutina.nombre || "Plan de Entrenamiento"}</span>
-          <span style={s.duration}>{rutina.dias.length} DÍAS</span>
+          <span style={s.title}>📋 {normalized.nombre}</span>
+          <span style={s.duration}>{normalized.dias.length} DÍAS</span>
         </div>
-        {rutina.dias.map((dia, i) => (
+        {normalized.dias.map((dia, i) => (
           <div key={i}>
-            <div style={s.dayTitle}>🏋️ {dia.nombre || `Día ${i + 1}`} {dia.duracion_minutos ? `· ${dia.duracion_minutos} min` : ""}</div>
+            <div style={s.dayTitle}>🏋️ {dia.nombre} {dia.duracion_minutos ? `· ${dia.duracion_minutos} min` : ""}</div>
             <EjerciciosList ejercicios={dia.ejercicios} />
           </div>
         ))}
-        {onStart && <button style={s.btn} onClick={onStart}>🔥 Iniciar Entrenamiento</button>}
+        {onStart && <button style={s.btn} onClick={() => onStart(normalized)}>🔥 Iniciar Entrenamiento</button>}
       </div>
     );
   }
 
-  // Rutina simple con ejercicios directos
-  if (!rutina.ejercicios) return null;
   return (
     <div style={s.card}>
       <div style={s.header}>
-        <span style={s.title}>📋 {rutina.nombre}</span>
-        {rutina.duracion_minutos && <span style={s.duration}>{rutina.duracion_minutos} MIN</span>}
+        <span style={s.title}>📋 {normalized.nombre}</span>
+        {normalized.duracion_minutos && <span style={s.duration}>{normalized.duracion_minutos} MIN</span>}
       </div>
-      <EjerciciosList ejercicios={rutina.ejercicios} />
-      {onStart && <button style={s.btn} onClick={onStart}>🔥 Iniciar Entrenamiento</button>}
+      <EjerciciosList ejercicios={normalized.ejercicios} />
+      {onStart && <button style={s.btn} onClick={() => onStart(normalized)}>🔥 Iniciar Entrenamiento</button>}
     </div>
   );
 }
