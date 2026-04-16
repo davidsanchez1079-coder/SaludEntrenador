@@ -13,6 +13,7 @@ import './App.css';
 const STORAGE_KEY = 'saludentrenador_usuario_id';
 const STORAGE_EMAIL_KEY = 'saludentrenador_usuario_correo';
 const GUEST_KEY = 'saludentrenador_guest_mode';
+const AUTOLOGIN_KEY = 'saludentrenador_auto_login';
 
 const alertStyle = {
   marginBottom: '1rem',
@@ -109,6 +110,7 @@ async function crearInvitado() {
   const newUser = await createUsuario({ nombre: 'Invitado' });
   localStorage.setItem(STORAGE_KEY, String(newUser.id));
   localStorage.setItem(GUEST_KEY, '1');
+  localStorage.setItem(AUTOLOGIN_KEY, '0');
   if (newUser?.correo) localStorage.setItem(STORAGE_EMAIL_KEY, newUser.correo);
   return newUser;
 }
@@ -128,6 +130,7 @@ function LoginGate({ onLogin }) {
     setError('');
     try {
       const user = await cargarUsuarioPorCorreo(email);
+      localStorage.setItem(AUTOLOGIN_KEY, '1');
       onLogin(user);
     } catch {
       setError('No encontré un perfil con ese correo. Primero créalo o guárdalo en Perfil desde tu sesión principal.');
@@ -195,8 +198,14 @@ function App() {
   useEffect(() => {
     const savedId = localStorage.getItem(STORAGE_KEY);
     const savedEmail = localStorage.getItem(STORAGE_EMAIL_KEY);
+    const autoLogin = localStorage.getItem(AUTOLOGIN_KEY) === '1';
 
     if (!savedId && !savedEmail) {
+      setLoaded(true);
+      return;
+    }
+
+    if (!autoLogin) {
       setLoaded(true);
       return;
     }
