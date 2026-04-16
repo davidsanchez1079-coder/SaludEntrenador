@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,25 +55,19 @@ public class SaludService {
             - NUTRICION: alimentacion, dietas, calorias, hidratacion
             """;
 
-    /**
-     * Procesa un mensaje del usuario relacionado a salud.
-     */
     public EntradaSalud procesarMensaje(Long usuarioId, String mensaje) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + usuarioId));
 
         String perfilResumen = usuarioService.generarResumenPerfil(usuarioId);
-        String systemPrompt = String.format(SYSTEM_PROMPT_TEMPLATE, perfilResumen);
+        String resumenSaludVivo = generarResumenSalud(usuarioId);
+        String systemPrompt = String.format(SYSTEM_PROMPT_TEMPLATE, perfilResumen + "\n\n" + resumenSaludVivo);
 
-        // Construir historial de conversacion (ultimos 10 mensajes)
         List<EntradaSalud> historial = entradaSaludRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
         List<Map<String, String>> messages = construirHistorial(historial, mensaje);
 
-        // Llamar a Claude
         String respuestaIA = claudeService.chat(systemPrompt, messages);
 
-
-        // Parsear respuesta
         CategoriaSalud categoria = CategoriaSalud.BIENESTAR;
         String datosExtraidos = "{}";
         String respuestaTexto = respuestaIA;
@@ -96,7 +92,6 @@ public class SaludService {
             respuestaTexto = respuestaIA;
         }
 
-        // Guardar entrada
         EntradaSalud entrada = EntradaSalud.builder()
                 .usuario(usuario)
                 .textoOriginal(mensaje)
@@ -108,23 +103,14 @@ public class SaludService {
         return entradaSaludRepository.save(entrada);
     }
 
-    /**
-     * Obtiene el historial de salud de un usuario ordenado por fecha descendente.
-     */
     public List<EntradaSalud> obtenerHistorial(Long usuarioId) {
         return entradaSaludRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
     }
 
-    /**
-     * Obtiene historial filtrado por categoria.
-     */
     public List<EntradaSalud> obtenerHistorialPorCategoria(Long usuarioId, CategoriaSalud categoria) {
         return entradaSaludRepository.findByUsuarioIdAndCategoria(usuarioId, categoria);
     }
 
-    /**
-     * Genera un resumen de salud del usuario para el entrenador.
-     */
     public String generarResumenSalud(Long usuarioId) {
         List<EntradaSalud> entradas = entradaSaludRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
 
@@ -132,23 +118,73 @@ public class SaludService {
             return "Sin registros de salud.";
         }
 
-        StringBuilder sb = new StringBuilder("RESUMEN DE SALUD RECIENTE:\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append("RESUMEN VIVO DE SALUD:\n");
+
+        Map<String, String> vigentes = extraerDatosVigentes(entradas);
+        if (!vigentes.isEmpty()) {
+            sb.append("\nDATOS VIGENTES:\n");
+            vigentes.forEach((k, v) -> sb.append("- ").append(k).append(": ").append(v).append("\n"));
+        }
+
+        sb.append("\nULTIMOS EVENTOS IMPORTANTES:\n");
         int count = 0;
         for (EntradaSalud e : entradas) {
-            if (count >= 10) break;
+            if (count >= 8) break;
             sb.append(String.format("- [%s] %s: %s\n",
                     e.getFecha() != null ? e.getFecha().toLocalDate() : "sin fecha",
                     e.getCategoria(),
-                    e.getTextoOriginal()));
+                    resumirTexto(e.getTextoOriginal())));
             count++;
         }
         return sb.toString();
     }
 
+    private Map<String, String> extraerDatosVigentes(List<EntradaSalud> entradas) {
+        Map<String, String> vigentes = new LinkedHashMap<>();
+
+        for (EntradaSalud e : entradas) {
+            String texto = ((e.getTextoOriginal() == null ? "" : e.getTextoOriginal()) + " " +
+                    (e.getRespuestaIA() == null ? "" : e.getRespuestaIA())).toLowerCase();
+
+            if (!vigentes.containsKey("Mounjaro actual") && texto.contains("mounjaro") && texto.contains("5 mg")) {
+                vigentes.put("Mounjaro actual", "5 mg por semana");
+            } else if (!vigentes.containsKey("Mounjaro actual") && texto.contains("mounjaro") && texto.contains("10 mg")) {
+                vigentes.put("Mounjaro actual", "10 mg por semana");
+            }
+
+            if (!vigentes.containsKey("Tratamiento actual") && texto.contains("tirzepatida")) {
+                vigentes.put("Tratamiento actual", "Tirzepatida (Mounjaro)");
+            }
+
+            if (!vigentes.containsKey("Sintomas digestivos") && (texto.contains("diarrea") || texto.contains("inflamacion abdominal") || texto.contains("molestia digestiva"))) {
+                vigentes.put("Sintomas digestivos", "Inflamacion abdominal / diarrea / molestia digestiva");
+            }
+
+            if (!vigentes.containsKey("Frecuencia de entrenamiento") && (texto.contains("4-5 dias") || texto.contains("4 a 5 dias") || texto.contains("4 o 5 dias"))) {
+                vigentes.put("Frecuencia de entrenamiento", "4 a 5 dias por semana");
+            }
+
+            if (!vigentes.containsKey("Fecha base de laboratorios") && e.getCategoria() == CategoriaSalud.LABORATORIO) {
+                LocalDate fecha = e.getFecha() != null ? e.getFecha().toLocalDate() : null;
+                if (fecha != null) {
+                    vigentes.put("Fecha base de laboratorios", fecha.toString());
+                }
+            }
+        }
+
+        return vigentes;
+    }
+
+    private String resumirTexto(String texto) {
+        if (texto == null || texto.isBlank()) return "Sin detalle";
+        String limpio = texto.replaceAll("\n+", " ").trim();
+        return limpio.length() > 140 ? limpio.substring(0, 140) + "..." : limpio;
+    }
+
     private List<Map<String, String>> construirHistorial(List<EntradaSalud> historial, String mensajeActual) {
         List<Map<String, String>> messages = new ArrayList<>();
 
-        // Agregar los ultimos 10 mensajes del historial (en orden cronologico)
         int start = Math.max(0, historial.size() - 10);
         List<EntradaSalud> recientes = new ArrayList<>(historial.subList(start, historial.size()));
         java.util.Collections.reverse(recientes);
@@ -160,7 +196,6 @@ public class SaludService {
             }
         }
 
-        // Agregar mensaje actual
         messages.add(Map.of("role", "user", "content", mensajeActual));
         return messages;
     }
