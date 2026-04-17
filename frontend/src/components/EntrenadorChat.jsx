@@ -57,13 +57,17 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
       const parsedContent = extractJSON(content);
       if (parsedContent) {
         content = parsedContent.respuesta || content;
-        rutina = parsedContent.rutina || rutina;
+        rutina = parsedContent.rutina || parsedContent.plan_entrenamiento || rutina;
         consejo = parsedContent.consejo || consejo;
       }
 
       if (typeof rutina === 'string') {
         const parsedRutina = extractJSON(rutina);
         if (parsedRutina) rutina = parsedRutina;
+      }
+
+      if (!rutina && parsedContent) {
+        rutina = parsedContent.rutina || parsedContent.plan_entrenamiento || null;
       }
 
       if (typeof consejo === 'string') {
@@ -74,7 +78,7 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
       if (looksLikeRawJson(content)) {
         const parsed = extractJSON(content);
         if (parsed) {
-          rutina = parsed?.rutina || parsed?.plan || rutina || parsed;
+          rutina = parsed?.rutina || parsed?.plan || parsed?.plan_entrenamiento || rutina || parsed;
           consejo = parsed?.consejo || consejo;
           content = parsed?.respuesta || parsed?.mensaje || 'Aquí tienes tu plan de entrenamiento.';
         } else {
