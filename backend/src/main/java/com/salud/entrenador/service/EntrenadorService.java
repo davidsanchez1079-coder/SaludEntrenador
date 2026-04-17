@@ -27,14 +27,22 @@ public class EntrenadorService {
     private final ObjectMapper objectMapper;
 
     private static final String CHAT_PROMPT = """
-            Eres un entrenador personal inteligente. Tu trabajo es responder con base en el perfil y estado vigente de salud del usuario.
-            Prioriza siempre el dato mas reciente cuando haya cambios de dosis, sintomas, peso o entrenamiento.
-            Si el resumen de salud indica una dosis vigente de Mounjaro, usa esa como la correcta y no menciones dosis viejas como actuales.
-            Responde claro, breve y practico. Si el usuario pregunta por su estado actual, resume lo vigente.
+            Eres un entrenador personal de elite con 15 anios de experiencia. Conoces a tu cliente, su cuerpo, sus limites y su objetivo.
 
-            Si el usuario pide una rutina, plan o entrenamiento, responde SIEMPRE en JSON valido con esta forma:
+            REGLAS CLAVE:
+            1. SIEMPRE sugiere PESOS INICIALES CONCRETOS para cada ejercicio basados en:
+               - Peso corporal del usuario (regla general: press banca ~40-50%% del peso corporal para principiante, 60-70%% intermedio, 80%%+ avanzado)
+               - Historial previo (si ya hizo ese ejercicio antes, usa el ultimo peso registrado como referencia)
+               - Objetivo (hipertrofia: peso moderado 8-12 reps, fuerza: peso alto 3-6 reps, resistencia: peso bajo 15-20 reps)
+               - Si NO hay historial, estima un peso conservador pero realista basado en peso corporal y sexo
+            2. La primera serie SIEMPRE es de aproximacion/calentamiento con peso mas bajo
+            3. Las series intermedias son de TRABAJO con el peso objetivo
+            4. La ultima serie puede ser al tope si el cliente esta listo
+            5. Nunca pongas 0 kg. Siempre pon un peso concreto aunque sea estimado.
+
+            Si el usuario pide una rutina, responde SIEMPRE en JSON valido:
             {
-              "respuesta": "Aqui tienes tu plan de entrenamiento.",
+              "respuesta": "Aqui tienes tu plan. Los pesos estan basados en tu peso corporal y nivel.",
               "rutina": {
                 "nombre": "Plan de entrenamiento",
                 "dias": [
@@ -46,22 +54,24 @@ public class EntrenadorService {
                         "nombre": "Press de banca",
                         "series": "4",
                         "repeticiones": "8-10",
-                        "descanso_seg": "90"
+                        "peso_sugerido_kg": "40",
+                        "descanso_seg": "90",
+                        "nota_coach": "Serie 1 con 30kg para calentar. Series 2-4 con 40kg buscando 8-10 reps."
                       }
                     ]
                   }
                 ]
               },
-              "consejo": "Consejo breve opcional"
+              "consejo": "Consejo breve"
             }
 
-            Si NO pide rutina, responde solo en JSON valido con:
-            {
-              "respuesta": "tu respuesta aqui",
-              "consejo": "opcional"
-            }
+            IMPORTANTE: El campo peso_sugerido_kg DEBE tener un numero real basado en el perfil.
 
-            Nunca respondas markdown ni bloques de codigo. Nunca devuelvas texto fuera del JSON.
+            Si NO pide rutina, responde en JSON: {"respuesta": "tu respuesta", "consejo": "opcional"}
+            Nunca respondas markdown ni bloques de codigo. Solo JSON.
+
+            HISTORIAL DE ENTRENAMIENTOS ANTERIORES (usa estos pesos como referencia para progresion):
+            %s
 
             CONTEXTO DEL USUARIO:
             %s
@@ -159,9 +169,10 @@ public class EntrenadorService {
 
         String perfil = usuarioService.generarResumenPerfil(usuarioId);
         String resumenSalud = saludService.generarResumenSalud(usuarioId);
+        String historialEntrenamientos = generarHistorialCompleto(usuarioId);
         String contexto = perfil + "\n\n" + resumenSalud;
 
-        String prompt = String.format(CHAT_PROMPT, contexto);
+        String prompt = String.format(CHAT_PROMPT, historialEntrenamientos, contexto);
         String respuesta = claudeService.chat(prompt, List.of(Map.of("role", "user", "content", mensaje)));
 
         Map<String, Object> out = new LinkedHashMap<>();
@@ -293,6 +304,21 @@ public class EntrenadorService {
 
     public List<Entrenamiento> obtenerHistorial(Long usuarioId) {
         return entrenamientoRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
+    }
+
+    private String generarHistorialCompleto(Long usuarioId) {
+        List<Entrenamiento> recientes = entrenamientoRepository.findTop5ByUsuarioIdOrderByFechaDesc(usuarioId);
+        if (recientes.isEmpty()) {
+            return "Sin entrenamientos previos. Es su primer entrenamiento. Estimar pesos conservadores basados en peso corporal.";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Entrenamiento e : recientes) {
+            sb.append(String.format("[%s] %s: %s\n",
+                    e.getFecha() != null ? e.getFecha().toLocalDate() : "sin fecha",
+                    e.getNombreRutina(),
+                    e.getEjerciciosLog() != null ? e.getEjerciciosLog().substring(0, Math.min(500, e.getEjerciciosLog().length())) : "sin detalle"));
+        }
+        return sb.toString();
     }
 
     private int toInt(Object val, int defaultVal) {

@@ -91,7 +91,9 @@ function flattenExercises(rutina) {
           nombre: ej.nombre || ej.ejercicio || ej.name || 'Ejercicio',
           series: Number(ej.series) || Number(ej.sets) || 3,
           repeticiones: ej.repeticiones || ej.reps || '10-12',
+          peso_sugerido_kg: ej.peso_sugerido_kg || ej.peso || ej.weight || '',
           descanso_seg: ej.descanso_seg || ej.descanso || 60,
+          nota_coach: ej.nota_coach || ej.notas || '',
           musculo_principal: ej.musculo_principal || dia.grupo || dia.subtitulo || 'general',
           _dia: dia.nombre || 'Dia',
         });
@@ -244,11 +246,30 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
         <span style={s.title}>{'\u{1F525}'} {rutina.nombre}</span>
         <button onClick={onFinish} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>{'\u2716'}</button>
       </div>
-      <div style={s.progress}>Ejercicio {currentIdx + 1} de {ejercicios.length}</div>
+      <div style={s.progress}>
+        {current._dia && <span style={{ color: 'var(--accent)' }}>{current._dia} - </span>}
+        Ejercicio {currentIdx + 1} de {ejercicios.length}
+      </div>
       <div style={s.exerciseName}>
         {current.nombre}
         {current.musculo_principal && <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginLeft: '0.5rem', textTransform: 'lowercase', fontWeight: 400 }}>({current.musculo_principal})</span>}
       </div>
+
+      {/* Nota del coach para este ejercicio */}
+      {current.nota_coach && (
+        <div style={{ padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', background: 'var(--bg)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', color: 'var(--text)', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+          <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{'\u{1F3AF}'} COACH: </span>
+          {current.nota_coach}
+        </div>
+      )}
+
+      {/* Peso sugerido como referencia */}
+      {current.peso_sugerido_kg && (
+        <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '0.5rem', fontWeight: 600 }}>
+          Peso sugerido: <span style={{ color: 'var(--text)', fontWeight: 800 }}>{current.peso_sugerido_kg} kg</span>
+          {' '} | {current.repeticiones} reps | Descanso: {current.descanso_seg}s
+        </div>
+      )}
 
       <div style={{ ...s.setRow, marginBottom: '0.75rem' }}>
         <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>SET</span>
