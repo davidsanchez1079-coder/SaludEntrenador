@@ -80,15 +80,28 @@ public class EntrenadorService {
         Map<String, Object> out = new LinkedHashMap<>();
         try {
             JsonNode json = objectMapper.readTree(respuesta);
+            log.info("Entrenador JSON parseado. Campos presentes: {}", json.fieldNames().hasNext() ? json.fieldNames().next() : "vacio");
             out.put("respuesta", json.hasNonNull("respuesta") ? json.get("respuesta").asText() : "Aqui tienes tu plan de entrenamiento.");
-            if (json.has("rutina") && !json.get("rutina").isNull()) {
-                out.put("rutina", objectMapper.convertValue(json.get("rutina"), Map.class));
+
+            // Buscar rutina en multiples campos posibles
+            JsonNode rutinaNode = null;
+            for (String campo : new String[]{"rutina", "plan_entrenamiento", "plan", "workout"}) {
+                if (json.has(campo) && !json.get(campo).isNull()) {
+                    rutinaNode = json.get(campo);
+                    break;
+                }
             }
+            if (rutinaNode != null) {
+                out.put("rutina", objectMapper.readValue(rutinaNode.toString(), Object.class));
+                log.info("Rutina encontrada con {} caracteres", rutinaNode.toString().length());
+            }
+
             if (json.hasNonNull("consejo")) {
                 out.put("consejo", json.get("consejo").asText());
             }
         } catch (Exception e) {
             log.warn("Respuesta del entrenador no vino en JSON valido: {}", e.getMessage());
+            log.warn("Respuesta cruda (primeros 300): {}", respuesta != null ? respuesta.substring(0, Math.min(300, respuesta.length())) : "null");
             out.put("respuesta", respuesta == null || respuesta.isBlank() ? "Aqui tienes tu plan de entrenamiento." : respuesta);
         }
         return out;

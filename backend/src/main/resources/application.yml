@@ -27,4 +27,4 @@ spring:
 openai:
   api-key: ${OPENAI_API_KEY:}
   model: gpt-4o
-  max-tokens: 1000
+  max-tokens: 4096
