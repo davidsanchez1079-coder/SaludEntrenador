@@ -26,6 +26,133 @@ public class EntrenadorService {
     private final ClaudeService claudeService;
     private final ObjectMapper objectMapper;
 
+    private static final String CHAT_PROMPT = """
+            Eres un entrenador personal inteligente. Tu trabajo es responder con base en el perfil y estado vigente de salud del usuario.
+            Prioriza siempre el dato mas reciente cuando haya cambios de dosis, sintomas, peso o entrenamiento.
+            Si el resumen de salud indica una dosis vigente de Mounjaro, usa esa como la correcta y no menciones dosis viejas como actuales.
+            Responde claro, breve y practico. Si el usuario pregunta por su estado actual, resume lo vigente.
+
+            Si el usuario pide una rutina, plan o entrenamiento, responde SIEMPRE en JSON valido con esta forma:
+            {
+              "respuesta": "Aqui tienes tu plan de entrenamiento.",
+              "rutina": {
+                "nombre": "Plan de entrenamiento",
+                "dias": [
+                  {
+                    "nombre": "Dia 1",
+                    "grupo": "Pecho y tricep",
+                    "ejercicios": [
+                      {
+                        "nombre": "Press de banca",
+                        "series": "4",
+                        "repeticiones": "8-10",
+                        "descanso_seg": "90"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "consejo": "Consejo breve opcional"
+            }
+
+            Si NO pide rutina, responde solo en JSON valido con:
+            {
+              "respuesta": "tu respuesta aqui",
+              "consejo": "opcional"
+            }
+
+            Nunca respondas markdown ni bloques de codigo. Nunca devuelvas texto fuera del JSON.
+
+            CONTEXTO DEL USUARIO:
+            %s
+            """;
+
+    private static final String FEEDBACK_SERIE_PROMPT = """
+            Eres un ENTRENADOR PERSONAL DE ELITE guiando a tu cliente SERIE POR SERIE en tiempo real.
+            Hablas directo, motivacional, como si estuvieras al lado del cliente en el gym.
+
+            PERFIL DEL USUARIO:
+            %s
+
+            EJERCICIO ACTUAL: %s
+            Musculo principal: %s
+            Serie %d de %d
+
+            RESULTADO DE ESTA SERIE:
+            - Peso: %s kg
+            - Repeticiones: %s
+            - Intensidad RPE: %s%%
+            - Como se sintio: %s
+
+            PLAN ORIGINAL: %s reps con %s kg
+
+            SERIES ANTERIORES DE ESTE EJERCICIO HOY:
+            %s
+
+            HISTORIAL DE ESTE EJERCICIO EN SESIONES ANTERIORES:
+            %s
+
+            INSTRUCCIONES PARA TU RESPUESTA:
+            1. FEEDBACK INMEDIATO: Evalua esta serie. Fue buena? Puede mejorar? Se bien especifico.
+
+            2. COACHING DE POSTURA Y TECNICA: Segun el ejercicio, da un tip concreto:
+               - Cual debe ser la sensacion muscular correcta (donde debe "quemar")
+               - Punto clave de la postura (ej: "codos a 45 grados", "espalda pegada al banco")
+               - Error comun a evitar en este ejercicio especifico
+               - Velocidad del movimiento (ej: "baja en 3 segundos, sube explosivo")
+
+            3. TIPO DE SERIE: Clasifica la siguiente serie:
+               - "aproximacion" = todavia calentando, subir peso
+               - "trabajo" = peso objetivo, buscar el rango de reps completo
+               - "tope" = serie pesada, buscar maximo esfuerzo con buena tecnica
+               - "descarga" = bajar peso, buscar bombeo y conexion mente-musculo
+
+            4. AJUSTE PARA SIGUIENTE SERIE: Basado en el RPE, reps logradas y objetivo:
+               - Si RPE < 70%% y completo las reps: SUBIR peso
+               - Si RPE 70-85%% y completo reps: MANTENER o subir ligeramente
+               - Si RPE > 85%% y no completo reps: MANTENER peso
+               - Si RPE > 90%%: BAJAR peso o reducir reps
+
+            5. MOTIVACION: Una frase corta, directa, tipo entrenador. No cursi.
+
+            Responde UNICAMENTE en JSON valido:
+            {
+              "feedback": "Evaluacion de la serie + tip de postura/tecnica (2-3 frases max, directo)",
+              "tipo_siguiente_serie": "aproximacion|trabajo|tope|descarga",
+              "coaching_tip": "Tip especifico de postura o sensacion para la siguiente serie",
+              "ajuste_siguiente_serie": {
+                "peso_sugerido": "numero en kg",
+                "reps_sugeridas": "rango ej: 8-10"
+              },
+              "motivacion": "Frase corta motivacional",
+              "alerta": "great|ok|warning"
+            }
+            """;
+
+    private static final String RESUMEN_SESION_PROMPT = """
+            Eres un entrenador personal de elite evaluando la sesion de tu cliente.
+
+            PERFIL: %s
+
+            RUTINA: %s
+            LOG COMPLETO:
+            %s
+
+            Evalua como entrenador experto:
+            1. Calidad general de la sesion (volumen, intensidad, progresion)
+            2. Que hizo bien (se especifico con ejercicios)
+            3. Que puede mejorar (tecnica, peso, rango de reps)
+            4. Recomendaciones concretas para la proxima sesion
+            5. Si avanzo hacia su objetivo
+
+            Responde en JSON:
+            {
+              "resumen": "Evaluacion completa (3-4 parrafos, directo y motivacional)",
+              "calificacion": "excelente|buena|regular|necesita_mejorar",
+              "proximo_enfoque": "Que priorizar la proxima sesion"
+            }
+            """;
+
     public Map<String, Object> procesarMensaje(Long usuarioId, String mensaje) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + usuarioId));
@@ -34,47 +161,7 @@ public class EntrenadorService {
         String resumenSalud = saludService.generarResumenSalud(usuarioId);
         String contexto = perfil + "\n\n" + resumenSalud;
 
-        String prompt = """
-                Eres un entrenador personal inteligente. Tu trabajo es responder con base en el perfil y estado vigente de salud del usuario.
-                Prioriza siempre el dato mas reciente cuando haya cambios de dosis, sintomas, peso o entrenamiento.
-                Si el resumen de salud indica una dosis vigente de Mounjaro, usa esa como la correcta y no menciones dosis viejas como actuales.
-                Responde claro, breve y practico. Si el usuario pregunta por su estado actual, resume lo vigente.
-
-                Si el usuario pide una rutina, plan o entrenamiento, responde SIEMPRE en JSON valido con esta forma:
-                {
-                  "respuesta": "Aqui tienes tu plan de entrenamiento.",
-                  "rutina": {
-                    "nombre": "Plan de entrenamiento",
-                    "dias": [
-                      {
-                        "nombre": "Dia 1",
-                        "grupo": "Pecho y tricep",
-                        "ejercicios": [
-                          {
-                            "nombre": "Press de banca",
-                            "series": "4",
-                            "repeticiones": "8-10",
-                            "descanso_seg": "90"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  "consejo": "Consejo breve opcional"
-                }
-
-                Si NO pide rutina, responde solo en JSON valido con:
-                {
-                  "respuesta": "tu respuesta aqui",
-                  "consejo": "opcional"
-                }
-
-                Nunca respondas markdown ni bloques de codigo. Nunca devuelvas texto fuera del JSON.
-
-                CONTEXTO DEL USUARIO:
-                %s
-                """.formatted(contexto);
-
+        String prompt = String.format(CHAT_PROMPT, contexto);
         String respuesta = claudeService.chat(prompt, List.of(Map.of("role", "user", "content", mensaje)));
 
         Map<String, Object> out = new LinkedHashMap<>();
@@ -83,7 +170,6 @@ public class EntrenadorService {
             log.info("Entrenador JSON parseado. Campos presentes: {}", json.fieldNames().hasNext() ? json.fieldNames().next() : "vacio");
             out.put("respuesta", json.hasNonNull("respuesta") ? json.get("respuesta").asText() : "Aqui tienes tu plan de entrenamiento.");
 
-            // Buscar rutina en multiples campos posibles
             JsonNode rutinaNode = null;
             for (String campo : new String[]{"rutina", "plan_entrenamiento", "plan", "workout"}) {
                 if (json.has(campo) && !json.get(campo).isNull()) {
@@ -108,24 +194,94 @@ public class EntrenadorService {
     }
 
     public Map<String, Object> feedbackSerie(Long usuarioId, Map<String, Object> body) {
-        String ejercicio = body.getOrDefault("ejercicio", "ejercicio").toString();
-        String peso = body.getOrDefault("peso", "").toString();
-        String reps = body.getOrDefault("repeticiones", "").toString();
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + usuarioId));
 
-        return Map.of(
-                "respuesta", "Buen registro. Sigue cuidando tecnica, respiracion y control en " + ejercicio + "." +
-                        (peso.isBlank() ? "" : " Peso: " + peso + ".") +
-                        (reps.isBlank() ? "" : " Repeticiones: " + reps + ".")
-        );
+        String ejercicio = body.getOrDefault("ejercicio", "").toString();
+        String musculoPrincipal = body.getOrDefault("musculo_principal", "general").toString();
+        int serieActual = toInt(body.get("serie_actual"), 1);
+        int seriesTotales = toInt(body.get("series_totales"), 3);
+        String peso = body.getOrDefault("peso", "0").toString();
+        String reps = body.getOrDefault("reps", "0").toString();
+        int intensidad = toInt(body.get("intensidad"), 70);
+        String comoSeSintio = body.getOrDefault("como_se_sintio", "").toString();
+        String repsPlan = body.getOrDefault("reps_plan", "10-12").toString();
+        String pesoPlan = body.getOrDefault("peso_plan", "0").toString();
+        String seriesHoy = body.getOrDefault("series_anteriores_hoy", "Primera serie").toString();
+
+        // Buscar historial de este ejercicio en sesiones anteriores
+        List<Entrenamiento> historial = entrenamientoRepository.findHistorialEjercicio(usuarioId, ejercicio);
+        StringBuilder historialTexto = new StringBuilder();
+        if (historial.isEmpty()) {
+            historialTexto.append("Sin historial previo. Es la primera vez que hace este ejercicio.");
+        } else {
+            for (Entrenamiento e : historial) {
+                historialTexto.append(String.format("- [%s] %s\n",
+                        e.getFecha() != null ? e.getFecha().toLocalDate() : "sin fecha",
+                        e.getEjerciciosLog() != null ? e.getEjerciciosLog().substring(0, Math.min(200, e.getEjerciciosLog().length())) : ""));
+            }
+        }
+
+        String perfil = usuarioService.generarResumenPerfil(usuarioId);
+
+        String prompt = String.format(FEEDBACK_SERIE_PROMPT,
+                perfil, ejercicio, musculoPrincipal, serieActual, seriesTotales,
+                peso, reps, String.valueOf(intensidad), comoSeSintio.isBlank() ? "No especifico" : comoSeSintio,
+                repsPlan, pesoPlan, seriesHoy, historialTexto.toString());
+
+        String respuestaIA = claudeService.chat(prompt, List.of(Map.of("role", "user", "content", "Dame feedback de esta serie.")));
+
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        resultado.put("feedback", respuestaIA);
+        resultado.put("alerta", "ok");
+        resultado.put("tipo_siguiente_serie", "trabajo");
+        resultado.put("coaching_tip", "");
+        resultado.put("motivacion", "");
+        resultado.put("ajuste_siguiente_serie", Map.of("peso_sugerido", peso, "reps_sugeridas", repsPlan));
+
+        try {
+            JsonNode json = objectMapper.readTree(respuestaIA);
+            if (json.has("feedback")) resultado.put("feedback", json.get("feedback").asText());
+            if (json.has("alerta")) resultado.put("alerta", json.get("alerta").asText());
+            if (json.has("tipo_siguiente_serie")) resultado.put("tipo_siguiente_serie", json.get("tipo_siguiente_serie").asText());
+            if (json.has("coaching_tip")) resultado.put("coaching_tip", json.get("coaching_tip").asText());
+            if (json.has("motivacion")) resultado.put("motivacion", json.get("motivacion").asText());
+            if (json.has("ajuste_siguiente_serie")) resultado.put("ajuste_siguiente_serie", objectMapper.convertValue(json.get("ajuste_siguiente_serie"), Map.class));
+        } catch (Exception e) {
+            log.warn("Feedback no es JSON valido, usando texto plano: {}", e.getMessage());
+            resultado.put("feedback", respuestaIA);
+        }
+
+        return resultado;
     }
 
     public Map<String, Object> resumenSesion(Long usuarioId, Map<String, Object> body) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + usuarioId));
+
         String nombreRutina = body.getOrDefault("nombreRutina", "Sesion").toString();
         String ejerciciosLog = body.getOrDefault("ejerciciosLog", "").toString();
-        return Map.of(
-                "resumen", "Sesion registrada: " + nombreRutina + ". " +
-                        (ejerciciosLog.isBlank() ? "Buen trabajo." : "Resumen breve generado con base en tus ejercicios registrados.")
-        );
+        String perfil = usuarioService.generarResumenPerfil(usuarioId);
+
+        String prompt = String.format(RESUMEN_SESION_PROMPT, perfil, nombreRutina, ejerciciosLog);
+        String respuestaIA = claudeService.chat(prompt, List.of(Map.of("role", "user", "content", "Evalua mi sesion.")));
+
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        resultado.put("resumen", respuestaIA);
+        resultado.put("calificacion", "buena");
+        resultado.put("proximo_enfoque", "");
+
+        try {
+            JsonNode json = objectMapper.readTree(respuestaIA);
+            if (json.has("resumen")) resultado.put("resumen", json.get("resumen").asText());
+            if (json.has("calificacion")) resultado.put("calificacion", json.get("calificacion").asText());
+            if (json.has("proximo_enfoque")) resultado.put("proximo_enfoque", json.get("proximo_enfoque").asText());
+        } catch (Exception e) {
+            log.warn("Resumen sesion no es JSON valido: {}", e.getMessage());
+            resultado.put("resumen", respuestaIA);
+        }
+
+        return resultado;
     }
 
     public Entrenamiento guardarEntrenamiento(Long usuarioId, Entrenamiento entrenamiento) {
@@ -137,5 +293,11 @@ public class EntrenadorService {
 
     public List<Entrenamiento> obtenerHistorial(Long usuarioId) {
         return entrenamientoRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
+    }
+
+    private int toInt(Object val, int defaultVal) {
+        if (val == null) return defaultVal;
+        if (val instanceof Number) return ((Number) val).intValue();
+        try { return Integer.parseInt(val.toString()); } catch (Exception e) { return defaultVal; }
     }
 }

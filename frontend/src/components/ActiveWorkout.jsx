@@ -303,34 +303,86 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
               let feedbackText = '';
               let alertType = 'ok';
               let sugerido = null;
+              let coachingTip = '';
+              let tipoSerie = '';
+              let motivacion = '';
               try {
                 const fb = set.feedback;
                 let raw = typeof fb === 'string' ? fb : (typeof fb.feedback === 'string' ? fb.feedback : '');
                 if (raw.includes('{')) {
                   raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+                  const start = raw.indexOf('{');
+                  const end = raw.lastIndexOf('}');
+                  if (start >= 0 && end > start) raw = raw.substring(start, end + 1);
                   const parsed = JSON.parse(raw);
                   feedbackText = parsed.feedback || raw;
                   alertType = parsed.alerta || fb.alerta || 'ok';
                   sugerido = parsed.ajuste_siguiente_serie || fb.ajuste_siguiente_serie || null;
+                  coachingTip = parsed.coaching_tip || fb.coaching_tip || '';
+                  tipoSerie = parsed.tipo_siguiente_serie || fb.tipo_siguiente_serie || '';
+                  motivacion = parsed.motivacion || fb.motivacion || '';
                 } else {
                   feedbackText = fb.feedback || String(fb);
                   alertType = fb.alerta || 'ok';
                   sugerido = fb.ajuste_siguiente_serie || null;
+                  coachingTip = fb.coaching_tip || '';
+                  tipoSerie = fb.tipo_siguiente_serie || '';
+                  motivacion = fb.motivacion || '';
                 }
               } catch {
                 const fb = set.feedback;
                 feedbackText = typeof fb === 'string' ? fb : (fb.feedback || String(fb));
                 alertType = (typeof fb === 'object' && fb.alerta) ? fb.alerta : 'ok';
                 sugerido = (typeof fb === 'object' && fb.ajuste_siguiente_serie) ? fb.ajuste_siguiente_serie : null;
+                coachingTip = (typeof fb === 'object' && fb.coaching_tip) ? fb.coaching_tip : '';
+                tipoSerie = (typeof fb === 'object' && fb.tipo_siguiente_serie) ? fb.tipo_siguiente_serie : '';
+                motivacion = (typeof fb === 'object' && fb.motivacion) ? fb.motivacion : '';
               }
               const colors = alertColors[alertType] || alertColors.ok;
+              const tipoColors = {
+                aproximacion: { bg: 'rgba(96,165,250,0.12)', color: '#60a5fa', label: 'SERIE DE APROXIMACION' },
+                trabajo: { bg: 'rgba(34,197,94,0.12)', color: '#22c55e', label: 'SERIE DE TRABAJO' },
+                tope: { bg: 'rgba(229,62,62,0.12)', color: '#E53E3E', label: 'SERIE TOPE' },
+                descarga: { bg: 'rgba(168,85,247,0.12)', color: '#a855f7', label: 'SERIE DE DESCARGA' },
+              };
+              const tipoInfo = tipoColors[tipoSerie] || null;
+
               return (
-                <div style={{ ...s.feedbackBox, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color }}>
-                  {feedbackText}
-                  {sugerido && sugerido.peso_sugerido && (
-                    <span style={{ display: 'block', fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Siguiente: {sugerido.peso_sugerido}kg x {sugerido.reps_sugeridas}
-                    </span>
+                <div style={{ marginBottom: '0.75rem', marginTop: '0.25rem' }}>
+                  {/* Feedback principal */}
+                  <div style={{ ...s.feedbackBox, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.color, marginBottom: '0.35rem' }}>
+                    {feedbackText}
+                  </div>
+
+                  {/* Coaching tip */}
+                  {coachingTip && (
+                    <div style={{ padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', background: 'var(--bg)', border: '1px solid var(--border)', borderLeft: '3px solid #f59e0b', color: 'var(--text)', marginBottom: '0.35rem' }}>
+                      <span style={{ fontWeight: 800, color: '#f59e0b', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{'\u{1F3AF}'} TECNICA: </span>
+                      {coachingTip}
+                    </div>
+                  )}
+
+                  {/* Tipo de siguiente serie + peso sugerido */}
+                  {(tipoInfo || (sugerido && sugerido.peso_sugerido)) && (
+                    <div style={{ padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', background: tipoInfo ? tipoInfo.bg : 'var(--bg)', border: `1px solid ${tipoInfo ? tipoInfo.color : 'var(--border)'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                      {tipoInfo && (
+                        <span style={{ fontWeight: 800, color: tipoInfo.color, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          {tipoSerie === 'tope' ? '\u{1F525}' : tipoSerie === 'aproximacion' ? '\u{2B06}\uFE0F' : tipoSerie === 'descarga' ? '\u{1F4A7}' : '\u{1F4AA}'} {tipoInfo.label}
+                        </span>
+                      )}
+                      {sugerido && sugerido.peso_sugerido && (
+                        <span style={{ fontWeight: 800, color: 'var(--text)', fontSize: '0.8rem' }}>
+                          {sugerido.peso_sugerido}kg x {sugerido.reps_sugeridas}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Motivacion */}
+                  {motivacion && (
+                    <div style={{ padding: '0.4rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 800, fontStyle: 'italic', textAlign: 'center' }}>
+                      "{motivacion}"
+                    </div>
                   )}
                 </div>
               );
