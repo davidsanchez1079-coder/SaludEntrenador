@@ -133,7 +133,28 @@ function LoginGate({ onLogin }) {
       localStorage.setItem(AUTOLOGIN_KEY, '1');
       onLogin(user);
     } catch {
-      setError('No encontré un perfil con ese correo. Primero créalo o guárdalo en Perfil desde tu sesión principal.');
+      setError('No encontré un perfil con ese correo. Si quieres, puedes crearlo ahora mismo con ese mismo correo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const crearCuenta = async () => {
+    const email = correo.trim().toLowerCase();
+    if (!email) {
+      setError('Escribe tu correo para crear tu perfil.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const user = await createUsuario({ nombre: 'Mi Perfil', correo: email });
+      localStorage.setItem(STORAGE_KEY, String(user.id));
+      localStorage.setItem(STORAGE_EMAIL_KEY, email);
+      localStorage.setItem(AUTOLOGIN_KEY, '1');
+      onLogin(user);
+    } catch {
+      setError('No pude crear el perfil. Si ese correo ya existe, intenta entrar con correo.');
     } finally {
       setLoading(false);
     }
@@ -156,9 +177,9 @@ function LoginGate({ onLogin }) {
     <div style={loginWrap}>
       <div style={loginCard}>
         <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🏋️</div>
-        <h1 style={{ margin: 0, fontSize: '1.4rem' }}>Salud Entrenador</h1>
+        <h1 style={{ margin: 0, fontSize: '1.35rem' }}>La Chingada Fitness | Entrenador</h1>
         <p style={{ color: 'var(--text-dim)', lineHeight: 1.5, marginTop: '0.75rem' }}>
-          Entra con tu correo para recuperar tu perfil, historial y memoria en cualquier dispositivo. O usa invitado si solo quieres probar.
+          Entra con tu correo para recuperar tu perfil, historial y memoria en cualquier dispositivo. También puedes crear tu cuenta o usar invitado si solo quieres probar.
         </p>
 
         <input
@@ -171,6 +192,9 @@ function LoginGate({ onLogin }) {
 
         <button style={buttonPrimary} onClick={entrarConCorreo} disabled={loading}>
           {loading ? 'Entrando...' : 'Entrar con correo'}
+        </button>
+        <button style={{ ...buttonSecondary, marginTop: '0.75rem' }} onClick={crearCuenta} disabled={loading}>
+          Crear cuenta
         </button>
         <button style={buttonSecondary} onClick={entrarComoInvitado} disabled={loading}>
           Entrar como invitado
