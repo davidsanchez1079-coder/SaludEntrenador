@@ -74,8 +74,36 @@ function parseFeedback(fb) {
   return { feedback: String(fb.feedback || 'Sin feedback'), alerta: fb.alerta || 'ok', ajuste_siguiente_serie: fb.ajuste_siguiente_serie };
 }
 
+function flattenExercises(rutina) {
+  if (!rutina) return [];
+  // Si tiene ejercicios directos
+  if (Array.isArray(rutina.ejercicios) && rutina.ejercicios.length > 0) {
+    return rutina.ejercicios;
+  }
+  // Si tiene dias (plan multi-dia), aplanar todos los ejercicios
+  if (Array.isArray(rutina.dias)) {
+    const all = [];
+    for (const dia of rutina.dias) {
+      const ejercicios = dia.ejercicios || dia.exercises || [];
+      for (const ej of ejercicios) {
+        all.push({
+          ...ej,
+          nombre: ej.nombre || ej.ejercicio || ej.name || 'Ejercicio',
+          series: Number(ej.series) || Number(ej.sets) || 3,
+          repeticiones: ej.repeticiones || ej.reps || '10-12',
+          descanso_seg: ej.descanso_seg || ej.descanso || 60,
+          musculo_principal: ej.musculo_principal || dia.grupo || dia.subtitulo || 'general',
+          _dia: dia.nombre || 'Dia',
+        });
+      }
+    }
+    return all;
+  }
+  return [];
+}
+
 export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
-  const ejercicios = rutina.ejercicios || [];
+  const ejercicios = flattenExercises(rutina);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [logs, setLogs] = useState(
     ejercicios.map((ej) =>
@@ -90,6 +118,24 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
 
   const current = ejercicios[currentIdx];
   const currentLogs = logs[currentIdx] || [];
+
+  // Guard: si no hay ejercicios, mostrar mensaje en vez de pantalla blanca
+  if (ejercicios.length === 0) {
+    return (
+      <div style={s.container}>
+        <div style={s.header}>
+          <span style={s.title}>{'\u{1F525}'} {rutina?.nombre || 'Entrenamiento'}</span>
+          <button onClick={onFinish} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>{'\u2716'}</button>
+        </div>
+        <p style={{ color: 'var(--text-dim)', textAlign: 'center', padding: '2rem' }}>
+          No se encontraron ejercicios en esta rutina. Pide al entrenador que genere una rutina con ejercicios detallados.
+        </p>
+        <div style={{ textAlign: 'center' }}>
+          <button onClick={onFinish} style={{ ...s.btn, background: 'var(--accent)', color: '#fff' }}>Volver</button>
+        </div>
+      </div>
+    );
+  }
 
   const updateSet = (setIdx, field, value) => {
     setLogs((prev) => {
