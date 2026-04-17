@@ -20,6 +20,29 @@ function normalizeExercise(ej) {
   };
 }
 
+function parseExerciseString(texto) {
+  const t = String(texto || '').trim();
+  if (!t) return null;
+  const [nombreParte, detalleParte] = t.split(/:(.+)/).map(v => (v || '').trim());
+  const detalle = detalleParte || '';
+  const series = (detalle.match(/(\d+)\s*series?/i) || [])[1] || '-';
+  const repeticiones = (detalle.match(/de\s*([\d\-– aA]+)\s*repeticiones?/i) || [])[1]?.replace(/\s+/g, ' ') || '-';
+  return {
+    nombre: nombreParte || t,
+    series,
+    repeticiones,
+    descanso_seg: '-',
+  };
+}
+
+function normalizeDayEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries.map((ej) => {
+    if (typeof ej === 'string') return parseExerciseString(ej);
+    return normalizeExercise(ej);
+  }).filter(Boolean);
+}
+
 function normalizeRoutine(input) {
   if (!input || typeof input !== 'object') return null;
 
@@ -33,8 +56,27 @@ function normalizeRoutine(input) {
       dias: dias.map((dia, i) => ({
         nombre: dia?.nombre || dia?.dia || dia?.titulo || `Día ${i + 1}`,
         duracion_minutos: dia?.duracion_minutos || dia?.duracion || dia?.duration_minutes || null,
-        ejercicios: Array.isArray(dia?.ejercicios || dia?.exercises) ? (dia.ejercicios || dia.exercises).map(normalizeExercise) : [],
+        ejercicios: normalizeDayEntries(dia?.ejercicios || dia?.exercises),
       })),
+    };
+  }
+
+  const diasPorLlave = Object.keys(rutina)
+    .filter((k) => /^d[ií]a\s*\d+/i.test(k))
+    .map((k) => {
+      const dia = rutina[k] || {};
+      return {
+        nombre: k,
+        duracion_minutos: dia?.duracion_minutos || dia?.duracion || null,
+        subtitulo: dia?.['Grupo muscular principal'] || dia?.grupo_muscular_principal || dia?.grupo || '',
+        ejercicios: normalizeDayEntries(dia?.Ejercicios || dia?.ejercicios || dia?.exercises),
+      };
+    });
+
+  if (diasPorLlave.length) {
+    return {
+      nombre: rutina.nombre || rutina.titulo || rutina.nombre_rutina || 'Plan de Entrenamiento',
+      dias: diasPorLlave,
     };
   }
 
@@ -42,7 +84,7 @@ function normalizeRoutine(input) {
     return {
       nombre: rutina.nombre || rutina.titulo || rutina.nombre_rutina || 'Rutina',
       duracion_minutos: rutina.duracion_minutos || rutina.duracion || rutina.duration_minutes || null,
-      ejercicios: ejercicios.map(normalizeExercise),
+      ejercicios: normalizeDayEntries(ejercicios),
     };
   }
 
@@ -85,6 +127,7 @@ export default function RoutineCard({ rutina, onStart }) {
         {normalized.dias.map((dia, i) => (
           <div key={i}>
             <div style={s.dayTitle}>🏋️ {dia.nombre} {dia.duracion_minutos ? `· ${dia.duracion_minutos} min` : ""}</div>
+            {dia.subtitulo && <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>{dia.subtitulo}</div>}
             <EjerciciosList ejercicios={dia.ejercicios} />
           </div>
         ))}
