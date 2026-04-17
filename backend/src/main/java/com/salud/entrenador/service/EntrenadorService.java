@@ -1,10 +1,13 @@
 package com.salud.entrenador.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.salud.entrenador.model.Entrenamiento;
 import com.salud.entrenador.model.Usuario;
 import com.salud.entrenador.repository.EntrenamientoRepository;
 import com.salud.entrenador.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -13,6 +16,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EntrenadorService {
 
     private final UsuarioRepository usuarioRepository;
@@ -20,6 +24,7 @@ public class EntrenadorService {
     private final UsuarioService usuarioService;
     private final SaludService saludService;
     private final ClaudeService claudeService;
+    private final ObjectMapper objectMapper;
 
     public Map<String, Object> procesarMensaje(Long usuarioId, String mensaje) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -34,7 +39,38 @@ public class EntrenadorService {
                 Prioriza siempre el dato mas reciente cuando haya cambios de dosis, sintomas, peso o entrenamiento.
                 Si el resumen de salud indica una dosis vigente de Mounjaro, usa esa como la correcta y no menciones dosis viejas como actuales.
                 Responde claro, breve y practico. Si el usuario pregunta por su estado actual, resume lo vigente.
-                
+
+                Si el usuario pide una rutina, plan o entrenamiento, responde SIEMPRE en JSON valido con esta forma:
+                {
+                  "respuesta": "Aqui tienes tu plan de entrenamiento.",
+                  "rutina": {
+                    "nombre": "Plan de entrenamiento",
+                    "dias": [
+                      {
+                        "nombre": "Dia 1",
+                        "grupo": "Pecho y tricep",
+                        "ejercicios": [
+                          {
+                            "nombre": "Press de banca",
+                            "series": "4",
+                            "repeticiones": "8-10",
+                            "descanso_seg": "90"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "consejo": "Consejo breve opcional"
+                }
+
+                Si NO pide rutina, responde solo en JSON valido con:
+                {
+                  "respuesta": "tu respuesta aqui",
+                  "consejo": "opcional"
+                }
+
+                Nunca respondas markdown ni bloques de codigo. Nunca devuelvas texto fuera del JSON.
+
                 CONTEXTO DEL USUARIO:
                 %s
                 """.formatted(contexto);
@@ -42,7 +78,19 @@ public class EntrenadorService {
         String respuesta = claudeService.chat(prompt, List.of(Map.of("role", "user", "content", mensaje)));
 
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("respuesta", respuesta);
+        try {
+            JsonNode json = objectMapper.readTree(respuesta);
+            out.put("respuesta", json.hasNonNull("respuesta") ? json.get("respuesta").asText() : "Aqui tienes tu plan de entrenamiento.");
+            if (json.has("rutina") && !json.get("rutina").isNull()) {
+                out.put("rutina", objectMapper.convertValue(json.get("rutina"), Map.class));
+            }
+            if (json.hasNonNull("consejo")) {
+                out.put("consejo", json.get("consejo").asText());
+            }
+        } catch (Exception e) {
+            log.warn("Respuesta del entrenador no vino en JSON valido: {}", e.getMessage());
+            out.put("respuesta", respuesta == null || respuesta.isBlank() ? "Aqui tienes tu plan de entrenamiento." : respuesta);
+        }
         return out;
     }
 
