@@ -28,7 +28,12 @@ function extractJSON(str) {
 function looksLikeRawJson(str) {
   if (!str || typeof str !== 'string') return false;
   const t = str.trim();
-  return t.startsWith('{') && t.includes('"rutina"');
+  return (t.startsWith('{') || t.startsWith('```json')) && (
+    t.includes('"rutina"') ||
+    t.includes('"Día 1"') ||
+    t.includes('"Dia 1"') ||
+    t.includes('"Ejercicios"')
+  );
 }
 
 export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
@@ -68,7 +73,13 @@ export default function EntrenadorChat({ usuarioId, onStartWorkout }) {
 
       if (looksLikeRawJson(content)) {
         const parsed = extractJSON(content);
-        content = parsed?.respuesta || 'Aquí tienes tu plan de entrenamiento.';
+        if (parsed) {
+          rutina = parsed?.rutina || parsed?.plan || rutina || parsed;
+          consejo = parsed?.consejo || consejo;
+          content = parsed?.respuesta || parsed?.mensaje || 'Aquí tienes tu plan de entrenamiento.';
+        } else {
+          content = rutina ? 'Aquí tienes tu plan de entrenamiento.' : 'Aquí tienes tu plan de entrenamiento.';
+        }
       }
 
       if (!content || looksLikeRawJson(content)) {
