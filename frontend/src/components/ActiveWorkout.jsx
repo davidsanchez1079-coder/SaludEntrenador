@@ -104,8 +104,28 @@ function flattenExercises(rutina) {
   return [];
 }
 
+const UNIT_KEY = 'lcf_weight_unit';
+const KG_TO_LBS = 2.20462;
+const LBS_TO_KG = 0.453592;
+
+function toUnit(kg, unit) {
+  if (!kg || isNaN(Number(kg))) return kg;
+  if (unit === 'lbs') return Math.round(Number(kg) * KG_TO_LBS * 10) / 10;
+  return kg;
+}
+
+function toKg(val, unit) {
+  if (!val || isNaN(Number(val))) return val;
+  if (unit === 'lbs') return Math.round(Number(val) * LBS_TO_KG * 10) / 10;
+  return val;
+}
+
 export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
   const ejercicios = flattenExercises(rutina);
+  const [unit, setUnit] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem(UNIT_KEY) || 'kg';
+    return 'kg';
+  });
   const [currentIdx, setCurrentIdx] = useState(0);
   const [logs, setLogs] = useState(
     ejercicios.map((ej) =>
@@ -154,9 +174,10 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
     updateSet(setIdx, 'done', true);
     setLoadingFeedback(setIdx);
 
+    const pesoEnKg = toKg(set.peso, unit);
     const seriesAnterioresHoy = currentLogs
       .filter((_, i) => i < setIdx && currentLogs[i].done)
-      .map((s, i) => `Serie ${i + 1}: ${s.peso}kg x ${s.reps} reps (intensidad ${s.intensidad}%)`)
+      .map((s, i) => `Serie ${i + 1}: ${toKg(s.peso, unit)}kg x ${s.reps} reps (intensidad ${s.intensidad}%)`)
       .join('\n') || 'Primera serie';
 
     try {
@@ -164,7 +185,8 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
         ejercicio: current.nombre,
         musculo_principal: current.musculo_principal || 'general',
         serie_actual: setIdx + 1, series_totales: current.series || 3,
-        peso: set.peso, reps: set.reps, intensidad: set.intensidad,
+        peso: pesoEnKg, reps: set.reps, intensidad: set.intensidad,
+        unidad_usuario: unit,
         como_se_sintio: set.como_se_sintio, reps_plan: current.repeticiones,
         peso_plan: current.peso_sugerido_kg || 0, series_anteriores_hoy: seriesAnterioresHoy,
       });
@@ -172,7 +194,7 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
       updateSet(setIdx, 'feedback', parsed);
       if (parsed.ajuste_siguiente_serie && setIdx + 1 < currentLogs.length) {
         const pesoSug = parsed.ajuste_siguiente_serie.peso_sugerido;
-        if (pesoSug) updateSet(setIdx + 1, 'peso', String(pesoSug));
+        if (pesoSug) updateSet(setIdx + 1, 'peso', String(toUnit(pesoSug, unit)));
       }
     } catch (err) {
       console.error('[ActiveWorkout] Error feedback-serie:', err);
@@ -185,7 +207,7 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
     setSaving(true);
     const logCompleto = ejercicios.map((ej, i) => ({
       ejercicio: ej.nombre, musculo_principal: ej.musculo_principal || 'general',
-      series: logs[i].map((s, si) => ({ serie: si + 1, peso: s.peso, reps: s.reps, intensidad: s.intensidad, como_se_sintio: s.como_se_sintio })),
+      series: logs[i].map((s, si) => ({ serie: si + 1, peso: toKg(s.peso, unit), peso_display: s.peso, unidad: unit, reps: s.reps, intensidad: s.intensidad, como_se_sintio: s.como_se_sintio })),
     }));
     const logStr = JSON.stringify(logCompleto);
     try {
@@ -244,7 +266,18 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
     <div style={s.container}>
       <div style={s.header}>
         <span style={s.title}>{'\u{1F525}'} {rutina.nombre}</span>
-        <button onClick={onFinish} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>{'\u2716'}</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Toggle KG / LBS */}
+          <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+            <button onClick={() => { setUnit('kg'); localStorage.setItem(UNIT_KEY, 'kg'); }}
+              style={{ padding: '0.25rem 0.6rem', border: 'none', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                background: unit === 'kg' ? 'var(--accent)' : 'transparent', color: unit === 'kg' ? '#fff' : 'var(--text-dim)' }}>KG</button>
+            <button onClick={() => { setUnit('lbs'); localStorage.setItem(UNIT_KEY, 'lbs'); }}
+              style={{ padding: '0.25rem 0.6rem', border: 'none', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                background: unit === 'lbs' ? 'var(--accent)' : 'transparent', color: unit === 'lbs' ? '#fff' : 'var(--text-dim)' }}>LBS</button>
+          </div>
+          <button onClick={onFinish} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>{'\u2716'}</button>
+        </div>
       </div>
       <div style={s.progress}>
         {current._dia && <span style={{ color: 'var(--accent)' }}>{current._dia} - </span>}
@@ -266,14 +299,14 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
       {/* Peso sugerido como referencia */}
       {current.peso_sugerido_kg && (
         <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '0.5rem', fontWeight: 600 }}>
-          Peso sugerido: <span style={{ color: 'var(--text)', fontWeight: 800 }}>{current.peso_sugerido_kg} kg</span>
+          Peso sugerido: <span style={{ color: 'var(--text)', fontWeight: 800 }}>{toUnit(current.peso_sugerido_kg, unit)} {unit}</span>
           {' '} | {current.repeticiones} reps | Descanso: {current.descanso_seg}s
         </div>
       )}
 
       <div style={{ ...s.setRow, marginBottom: '0.75rem' }}>
         <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>SET</span>
-        <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 700, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>PESO (kg)</span>
+        <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 700, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>PESO ({unit})</span>
         <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', fontWeight: 700, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>REPS</span>
         <span></span>
       </div>
@@ -393,7 +426,7 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
                       )}
                       {sugerido && sugerido.peso_sugerido && (
                         <span style={{ fontWeight: 800, color: 'var(--text)', fontSize: '0.8rem' }}>
-                          {sugerido.peso_sugerido}kg x {sugerido.reps_sugeridas}
+                          {toUnit(sugerido.peso_sugerido, unit)} {unit} x {sugerido.reps_sugeridas}
                         </span>
                       )}
                     </div>
