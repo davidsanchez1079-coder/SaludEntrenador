@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { chatSalud } from '../services/api';
+import { chatSalud, getHistorialSalud } from '../services/api';
 import ChatBubble from './ChatBubble';
 import ChatInput from './ChatInput';
 import LoadingDots from './LoadingDots';
@@ -15,7 +15,26 @@ const s = {
 export default function SaludChat({ usuarioId }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [historialCargado, setHistorialCargado] = useState(false);
   const endRef = useRef(null);
+
+  // Cargar historial previo al abrir
+  useEffect(() => {
+    if (!historialCargado) {
+      getHistorialSalud(usuarioId).then((entries) => {
+        if (entries && entries.length > 0) {
+          const prevMsgs = [];
+          const recientes = entries.slice(0, 15).reverse();
+          for (const e of recientes) {
+            prevMsgs.push({ role: 'user', content: e.textoOriginal || '', categoria: e.categoria, time: e.fecha ? new Date(e.fecha).toLocaleTimeString() : '', _historic: true });
+            if (e.respuestaIA) prevMsgs.push({ role: 'assistant', content: e.respuestaIA, categoria: e.categoria, time: e.fecha ? new Date(e.fecha).toLocaleTimeString() : '', _historic: true });
+          }
+          setMessages(prevMsgs);
+        }
+        setHistorialCargado(true);
+      }).catch(() => setHistorialCargado(true));
+    }
+  }, [usuarioId]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 

@@ -329,6 +329,12 @@ public class EntrenadorService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + usuarioId));
         entrenamiento.setUsuario(usuario);
+        if (entrenamiento.getCompletado() == null) entrenamiento.setCompletado(true);
+        if (entrenamiento.getEjerciciosLog() == null) entrenamiento.setEjerciciosLog("{}");
+        if (entrenamiento.getNombreRutina() == null) entrenamiento.setNombreRutina("Entrenamiento");
+        log.info("Guardando entrenamiento para usuario {}: {} ({} chars de log)",
+                usuarioId, entrenamiento.getNombreRutina(),
+                entrenamiento.getEjerciciosLog() != null ? entrenamiento.getEjerciciosLog().length() : 0);
         return entrenamientoRepository.save(entrenamiento);
     }
 

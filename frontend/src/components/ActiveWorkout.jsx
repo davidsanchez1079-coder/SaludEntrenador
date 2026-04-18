@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { guardarWorkout, feedbackSerie, resumenSesion } from '../services/api';
 import LoadingDots from './LoadingDots';
 
@@ -139,6 +139,24 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
   const [loadingFeedback, setLoadingFeedback] = useState(null);
   const [sessionResumen, setSessionResumen] = useState(null);
 
+  // Auto-save: guardar progreso en localStorage cada vez que cambian los logs
+  const DRAFT_KEY = `lcf_workout_draft_${usuarioId}`;
+  useEffect(() => {
+    if (ejercicios.length > 0) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          rutinaNombre: rutina?.nombre || '',
+          currentIdx,
+          logs,
+          timestamp: Date.now(),
+        }));
+      } catch { /* localStorage full */ }
+    }
+  }, [logs, currentIdx]);
+
+  // Limpiar draft al terminar
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
+
   const current = ejercicios[currentIdx];
   const currentLogs = logs[currentIdx] || [];
 
@@ -210,7 +228,11 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
     setSaving(true);
     const logCompleto = ejercicios.map((ej, i) => ({
       ejercicio: ej.nombre, musculo_principal: ej.musculo_principal || 'general',
-      series: logs[i].map((s, si) => ({ serie: si + 1, peso_kg: s.pesoKg, peso_display: `${toUnit(s.pesoKg, unit)} ${unit}`, reps: s.reps, intensidad: s.intensidad, como_se_sintio: s.como_se_sintio })),
+      series: logs[i].map((s, si) => ({
+        serie: si + 1, peso_kg: s.pesoKg, peso_display: `${toUnit(s.pesoKg, unit)} ${unit}`,
+        reps: s.reps, intensidad: s.intensidad, como_se_sintio: s.como_se_sintio,
+        feedback_ia: s.feedback ? (typeof s.feedback === 'object' ? s.feedback.feedback : s.feedback) : null,
+      })),
     }));
     const logStr = JSON.stringify(logCompleto);
     try {
@@ -226,8 +248,15 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
       } catch { /* */ }
       setSessionResumen(resumen);
       await guardarWorkout(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr, completado: true, resumenSesion: resumen.resumen || '' });
+      clearDraft();
     } catch {
-      await guardarWorkout(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr, completado: true }).catch(() => {});
+      try {
+        await guardarWorkout(usuarioId, { nombreRutina: rutina.nombre, ejerciciosLog: logStr, completado: true });
+        clearDraft();
+      } catch {
+        // Si falla el save, NO limpiar draft para que se pueda recuperar
+        alert('Error guardando entrenamiento. Tu progreso esta guardado localmente. Intenta de nuevo.');
+      }
     }
     setSaving(false);
   };
