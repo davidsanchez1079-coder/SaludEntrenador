@@ -1,11 +1,16 @@
 package com.salud.entrenador.controller;
 
 import com.salud.entrenador.model.Usuario;
+import com.salud.entrenador.repository.EntradaSaludRepository;
+import com.salud.entrenador.repository.EntrenamientoRepository;
 import com.salud.entrenador.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -13,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final EntradaSaludRepository entradaSaludRepository;
+    private final EntrenamientoRepository entrenamientoRepository;
 
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> obtenerPorId(@PathVariable Long id) {
@@ -32,5 +39,19 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public ResponseEntity<Usuario> actualizar(@PathVariable Long id, @RequestBody Usuario cambios) {
         return ResponseEntity.ok(usuarioService.actualizarUsuario(id, cambios));
+    }
+
+    @DeleteMapping("/{id}/historial")
+    @Transactional
+    public ResponseEntity<Map<String, String>> borrarHistorial(@PathVariable Long id) {
+        Usuario usuario = usuarioService.obtenerPorId(id);
+        int salud = entradaSaludRepository.findByUsuarioIdOrderByFechaDesc(id).size();
+        entradaSaludRepository.deleteAll(entradaSaludRepository.findByUsuarioIdOrderByFechaDesc(id));
+        int entrenos = entrenamientoRepository.findByUsuarioIdOrderByFechaDesc(id).size();
+        entrenamientoRepository.deleteAll(entrenamientoRepository.findByUsuarioIdOrderByFechaDesc(id));
+        return ResponseEntity.ok(Map.of(
+                "mensaje", String.format("Historial borrado: %d registros de salud, %d entrenamientos", salud, entrenos),
+                "usuario", usuario.getNombre()
+        ));
     }
 }

@@ -87,3 +87,9 @@ export function guardarWorkout(usuarioId, payload) {
 export function getHistorialEntrenador(usuarioId) {
   return request(`/api/entrenador/${usuarioId}/historial`);
 }
+
+export function borrarHistorial(usuarioId) {
+  return request(`/api/usuarios/${usuarioId}/historial`, {
+    method: 'DELETE',
+  });
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getUsuario, updateUsuario } from '../services/api';
+import { getUsuario, updateUsuario, borrarHistorial } from '../services/api';
 
 const s = {
   card: { background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' },
@@ -18,10 +18,11 @@ const s = {
 
 const fields = ['nombre', 'edad', 'sexo', 'pesoInicial', 'estatura', 'objetivoGeneral', 'objetivoEspecifico', 'telefono', 'correo', 'condiciones', 'alergias'];
 
-export default function Profile({ usuarioId, onProfileSaved }) {
+export default function Profile({ usuarioId, onProfileSaved, onLogout }) {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [borrandoHistorial, setBorrandoHistorial] = useState(false);
 
   useEffect(() => {
     getUsuario(usuarioId)
@@ -124,6 +125,48 @@ export default function Profile({ usuarioId, onProfileSaved }) {
         <button type="submit" style={{ ...s.btn, opacity: saving ? 0.6 : 1 }} disabled={saving}>
           {saving ? 'Guardando...' : 'Guardar perfil'}
         </button>
+      </div>
+
+      {/* Zona de cuenta */}
+      <div style={{ ...s.card, marginTop: '2rem', borderColor: 'rgba(239,68,68,0.2)' }}>
+        <div style={s.title}>{'\u2699\uFE0F'} Cuenta</div>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm('Esto borrara TODO tu historial de salud y entrenamientos. Tu perfil se mantiene. Continuar?')) return;
+              setBorrandoHistorial(true);
+              try {
+                const res = await borrarHistorial(usuarioId);
+                setMessage({ type: 'success', text: res.mensaje || 'Historial borrado' });
+              } catch {
+                setMessage({ type: 'error', text: 'Error al borrar historial' });
+              }
+              setBorrandoHistorial(false);
+            }}
+            disabled={borrandoHistorial}
+            style={{ padding: '0.6rem 1.2rem', background: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px' }}
+          >
+            {borrandoHistorial ? 'Borrando...' : 'Borrar historial'}
+          </button>
+
+          {onLogout && (
+            <button
+              type="button"
+              onClick={() => {
+                if (!confirm('Cerrar sesion? Podras volver a entrar con tu correo.')) return;
+                localStorage.removeItem('saludentrenador_usuario_id');
+                localStorage.removeItem('saludentrenador_usuario_correo');
+                localStorage.removeItem('saludentrenador_auto_login');
+                localStorage.removeItem('saludentrenador_guest_mode');
+                onLogout();
+              }}
+              style={{ padding: '0.6rem 1.2rem', background: 'transparent', color: 'var(--text-dim)', border: '1px solid var(--border)', borderRadius: '8px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px' }}
+            >
+              Cerrar sesion
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );
