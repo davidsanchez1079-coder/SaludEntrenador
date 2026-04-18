@@ -6,7 +6,7 @@ spring:
     name: SaludEntrenador
 
   datasource:
-    url: ${DATABASE_URL:jdbc:h2:mem:saludentrenador;DB_CLOSE_DELAY=-1}
+    url: ${DATABASE_URL:jdbc:h2:file:./data/saludentrenador;DB_CLOSE_DELAY=-1}
     driver-class-name: ${DB_DRIVER:org.h2.Driver}
     username: ${DB_USER:sa}
     password: ${DB_PASSWORD:}
