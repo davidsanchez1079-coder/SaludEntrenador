@@ -143,6 +143,11 @@ public class EntrenadorService {
                SI FALLO 2 SERIES SEGUIDAS CON POCAS REPS: bajar significativamente y hacer serie de "descarga".
                NUNCA sugieras mantener el mismo peso si no logro ni el 70%% de las reps objetivo.
 
+               REGLA DE REDONDEO OBLIGATORIA:
+               Los pesos en el gym van en incrementos de 2.5 kg o 5 kg (mancuernas: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 kg etc. Barras: 20, 25, 30, 35, 40, 45, 50 kg etc.)
+               SIEMPRE redondea el peso sugerido al incremento de 2.5 kg mas cercano.
+               Nunca sugieras pesos como 22.3 kg o 37.8 kg. Solo numeros redondeados: 20, 22.5, 25, 27.5, 30, etc.
+
             5. MOTIVACION: Frase directa de entrenador real. Que se sienta el apoyo pero tambien la exigencia.
 
             Responde UNICAMENTE en JSON valido:
