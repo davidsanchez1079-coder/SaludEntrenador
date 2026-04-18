@@ -245,17 +245,20 @@ public class EntrenadorService {
         String pesoPlan = body.getOrDefault("peso_plan", "0").toString();
         String seriesHoy = body.getOrDefault("series_anteriores_hoy", "Primera serie").toString();
 
-        // Buscar historial de este ejercicio en sesiones anteriores
+        // Buscar historial de este ejercicio en sesiones anteriores (ultimas 4)
         List<Entrenamiento> historial = entrenamientoRepository.findHistorialEjercicio(usuarioId, ejercicio);
         StringBuilder historialTexto = new StringBuilder();
         if (historial.isEmpty()) {
-            historialTexto.append("Sin historial previo. Es la primera vez que hace este ejercicio.");
+            historialTexto.append("PRIMERA VEZ que hace este ejercicio. Sin datos previos de pesos o rendimiento.");
         } else {
+            historialTexto.append(String.format("HISTORIAL DE '%s' en las ultimas %d sesiones:\n", ejercicio, historial.size()));
             for (Entrenamiento e : historial) {
-                historialTexto.append(String.format("- [%s] %s\n",
+                historialTexto.append(String.format("- Sesion [%s] rutina '%s': %s\n",
                         e.getFecha() != null ? e.getFecha().toLocalDate() : "sin fecha",
-                        e.getEjerciciosLog() != null ? e.getEjerciciosLog().substring(0, Math.min(200, e.getEjerciciosLog().length())) : ""));
+                        e.getNombreRutina(),
+                        e.getEjerciciosLog() != null ? e.getEjerciciosLog().substring(0, Math.min(500, e.getEjerciciosLog().length())) : "sin detalle"));
             }
+            historialTexto.append("USA ESTOS DATOS para determinar la progresion de cargas y sugerir ajustes.\n");
         }
 
         String perfil = usuarioService.generarResumenPerfil(usuarioId);
@@ -334,16 +337,31 @@ public class EntrenadorService {
     }
 
     private String generarHistorialCompleto(Long usuarioId) {
-        List<Entrenamiento> recientes = entrenamientoRepository.findTop5ByUsuarioIdOrderByFechaDesc(usuarioId);
+        List<Entrenamiento> recientes = entrenamientoRepository.findByUsuarioIdOrderByFechaDesc(usuarioId);
         if (recientes.isEmpty()) {
             return "Sin entrenamientos previos. Es su primer entrenamiento. Estimar pesos conservadores basados en peso corporal.";
         }
+
+        // Limitar a los ultimos 10 entrenamientos pero con log completo
+        int limit = Math.min(recientes.size(), 10);
         StringBuilder sb = new StringBuilder();
-        for (Entrenamiento e : recientes) {
-            sb.append(String.format("[%s] %s: %s\n",
+        sb.append("HISTORIAL DE ENTRENAMIENTOS (del mas reciente al mas antiguo):\n");
+        sb.append("Total de entrenamientos registrados: ").append(recientes.size()).append("\n\n");
+
+        for (int i = 0; i < limit; i++) {
+            Entrenamiento e = recientes.get(i);
+            sb.append(String.format("=== [%s] %s ===\n",
                     e.getFecha() != null ? e.getFecha().toLocalDate() : "sin fecha",
-                    e.getNombreRutina(),
-                    e.getEjerciciosLog() != null ? e.getEjerciciosLog().substring(0, Math.min(500, e.getEjerciciosLog().length())) : "sin detalle"));
+                    e.getNombreRutina()));
+            if (e.getEjerciciosLog() != null) {
+                // Dar mas espacio al log para que la IA vea pesos reales
+                sb.append(e.getEjerciciosLog().substring(0, Math.min(1500, e.getEjerciciosLog().length())));
+                sb.append("\n");
+            }
+            if (e.getResumenSesion() != null && !e.getResumenSesion().isBlank()) {
+                sb.append("Evaluacion: ").append(e.getResumenSesion().substring(0, Math.min(200, e.getResumenSesion().length()))).append("\n");
+            }
+            sb.append("\n");
         }
         return sb.toString();
     }
