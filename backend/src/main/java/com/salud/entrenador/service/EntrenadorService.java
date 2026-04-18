@@ -39,7 +39,9 @@ public class EntrenadorService {
             3. Las series intermedias son de TRABAJO con el peso objetivo
             4. La ultima serie puede ser al tope si el cliente esta listo
             5. Nunca pongas 0 kg. Siempre pon un peso concreto aunque sea estimado.
-            6. Los pesos van en incrementos de 2.5 kg (barras) o 2 kg (mancuernas).
+            6. DISCOS DISPONIBLES por lado: en kg (2.5, 5, 10, 15, 20), en lbs (5, 10, 15, 25, 35, 45).
+               MANCUERNAS: en kg escala de 2.5 (2.5, 5, 7.5, 10...), en lbs escala de 5 (5, 10, 15, 20...).
+               Solo sugiere combinaciones de discos que existan. En nota_coach especifica QUE discos cargar.
 
             REGLA DE BARRAS - MUY IMPORTANTE:
             Cuando el ejercicio usa barra, SIEMPRE considera el peso de la barra:
@@ -165,17 +167,32 @@ public class EntrenadorService {
                SI FALLO 2 SERIES SEGUIDAS CON POCAS REPS: bajar significativamente y hacer serie de "descarga".
                NUNCA sugieras mantener el mismo peso si no logro ni el 70%% de las reps objetivo.
 
+               DISCOS Y MANCUERNAS DISPONIBLES EN EL GYM:
+
+               DISCOS para barras (por lado):
+               - En KILOGRAMOS: 2.5, 5, 10, 15, 20 kg
+               - En LIBRAS: 5, 10, 15, 25, 35, 45 lbs
+
+               MANCUERNAS disponibles:
+               - En KILOGRAMOS: escala de 2.5 en 2.5 (2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25...)
+               - En LIBRAS: escala de 5 en 5 (5, 10, 15, 20, 25, 30, 35, 40, 45, 50...)
+
                REGLA DE REDONDEO OBLIGATORIA:
-               Los pesos van en incrementos de 2.5 kg (barras) o 2 kg (mancuernas).
-               Barras: 20, 22.5, 25, 27.5, 30, 35, 40, 45, 50 kg etc.
-               Mancuernas: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 kg etc.
-               Nunca sugieras pesos como 22.3 kg o 37.8 kg.
+               - Peso total de barra = peso barra + (disco por lado x 2)
+               - Solo sugiere combinaciones de discos que EXISTAN. Ejemplo:
+                 * 60kg en barra recta = barra 20kg + 20kg por lado (disco de 20)
+                 * 55kg en barra recta = barra 20kg + 17.5kg por lado (disco 15 + disco 2.5)
+                 * 45kg en barra recta = barra 20kg + 12.5kg por lado (disco 10 + disco 2.5)
+               - En el feedback especifica QUE DISCOS poner. Ej: "Carga disco de 15 + disco de 2.5 por lado"
+               - Para mancuernas, solo sugiere pesos que existan en la escala
+               - Nunca sugieras pesos imposibles como 22.3 kg o 37.8 kg
 
                REGLA DE BARRAS EN AJUSTES:
                Si es ejercicio de barra, en el campo "feedback" especifica:
                - Peso total sugerido
                - Cuanto va por lado (descontando la barra)
-               - Ejemplo: "Sube a 65kg (barra recta 20kg + 22.5kg por lado)"
+               - QUE DISCOS usar exactamente
+               - Ejemplo: "Sube a 65kg (barra recta 20kg + disco de 20 + disco de 2.5 por lado)"
                El campo peso_sugerido siempre es el PESO TOTAL.
 
             5. MOTIVACION: Frase directa de entrenador real. Que se sienta el apoyo pero tambien la exigencia.
