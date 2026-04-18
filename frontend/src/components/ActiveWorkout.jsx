@@ -130,7 +130,8 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
   const [logs, setLogs] = useState(
     ejercicios.map((ej) =>
       Array.from({ length: ej.series || 3 }, () => ({
-        peso: ej.peso_sugerido_kg || '', reps: '', intensidad: 70, como_se_sintio: '', done: false, feedback: null,
+        pesoKg: Number(ej.peso_sugerido_kg) || 0,
+        reps: '', intensidad: 70, como_se_sintio: '', done: false, feedback: null,
       }))
     )
   );
@@ -170,14 +171,13 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
 
   const completeSerie = async (setIdx) => {
     const set = currentLogs[setIdx];
-    if (!set.peso && !set.reps) return;
+    if (!set.pesoKg && !set.reps) return;
     updateSet(setIdx, 'done', true);
     setLoadingFeedback(setIdx);
 
-    const pesoEnKg = toKg(set.peso, unit);
     const seriesAnterioresHoy = currentLogs
       .filter((_, i) => i < setIdx && currentLogs[i].done)
-      .map((s, i) => `Serie ${i + 1}: ${toKg(s.peso, unit)}kg x ${s.reps} reps (intensidad ${s.intensidad}%)`)
+      .map((s, i) => `Serie ${i + 1}: ${s.pesoKg}kg x ${s.reps} reps (intensidad ${s.intensidad}%)`)
       .join('\n') || 'Primera serie';
 
     try {
@@ -185,7 +185,7 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
         ejercicio: current.nombre,
         musculo_principal: current.musculo_principal || 'general',
         serie_actual: setIdx + 1, series_totales: current.series || 3,
-        peso: pesoEnKg, reps: set.reps, intensidad: set.intensidad,
+        peso: set.pesoKg, reps: set.reps, intensidad: set.intensidad,
         unidad_usuario: unit,
         como_se_sintio: set.como_se_sintio, reps_plan: current.repeticiones,
         peso_plan: current.peso_sugerido_kg || 0, series_anteriores_hoy: seriesAnterioresHoy,
@@ -194,7 +194,10 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
       updateSet(setIdx, 'feedback', parsed);
       if (parsed.ajuste_siguiente_serie && setIdx + 1 < currentLogs.length) {
         const pesoSug = parsed.ajuste_siguiente_serie.peso_sugerido;
-        if (pesoSug) updateSet(setIdx + 1, 'peso', String(toUnit(pesoSug, unit)));
+        if (pesoSug) {
+          updateSet(setIdx + 1, 'pesoKg', Number(pesoSug) || 0);
+          updateSet(setIdx + 1, '_displayPeso', undefined);
+        }
       }
     } catch (err) {
       console.error('[ActiveWorkout] Error feedback-serie:', err);
@@ -207,7 +210,7 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
     setSaving(true);
     const logCompleto = ejercicios.map((ej, i) => ({
       ejercicio: ej.nombre, musculo_principal: ej.musculo_principal || 'general',
-      series: logs[i].map((s, si) => ({ serie: si + 1, peso: toKg(s.peso, unit), peso_display: s.peso, unidad: unit, reps: s.reps, intensidad: s.intensidad, como_se_sintio: s.como_se_sintio })),
+      series: logs[i].map((s, si) => ({ serie: si + 1, peso_kg: s.pesoKg, peso_display: `${toUnit(s.pesoKg, unit)} ${unit}`, reps: s.reps, intensidad: s.intensidad, como_se_sintio: s.como_se_sintio })),
     }));
     const logStr = JSON.stringify(logCompleto);
     try {
@@ -292,7 +295,9 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
       {current.nota_coach && (
         <div style={{ padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', background: 'var(--bg)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', color: 'var(--text)', marginBottom: '0.75rem', lineHeight: 1.4 }}>
           <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{'\u{1F3AF}'} COACH: </span>
-          {current.nota_coach}
+          {unit === 'lbs'
+            ? current.nota_coach.replace(/(\d+(?:\.\d+)?)\s*kg/gi, (_, num) => `${toUnit(num, 'lbs')} lbs`)
+            : current.nota_coach}
         </div>
       )}
 
@@ -320,7 +325,15 @@ export default function ActiveWorkout({ rutina, usuarioId, onFinish }) {
           <div key={i} style={{ opacity: blocked ? 0.4 : 1, pointerEvents: blocked ? 'none' : 'auto' }}>
             <div style={s.setRow}>
               <span style={s.setLabel}>#{i + 1}</span>
-              <input style={s.input} type="number" placeholder="0" value={set.peso} onChange={(e) => updateSet(i, 'peso', e.target.value)} disabled={set.done} />
+              <input style={s.input} type="number" placeholder="0"
+                value={set.done ? toUnit(set.pesoKg, unit) : (set._displayPeso !== undefined ? set._displayPeso : toUnit(set.pesoKg, unit))}
+                onChange={(e) => {
+                  const display = e.target.value;
+                  const inKg = toKg(display, unit);
+                  updateSet(i, 'pesoKg', Number(inKg) || 0);
+                  updateSet(i, '_displayPeso', display);
+                }}
+                disabled={set.done} />
               <input style={s.input} type="number" placeholder={String(current.repeticiones || 10)} value={set.reps} onChange={(e) => updateSet(i, 'reps', e.target.value)} disabled={set.done} />
               <button onClick={() => completeSerie(i)} disabled={set.done || loadingFeedback !== null}
                 style={{ ...s.doneBtn, ...(set.done ? s.doneBtnDone : {}), opacity: loadingFeedback !== null && !set.done ? 0.5 : 1 }}>
