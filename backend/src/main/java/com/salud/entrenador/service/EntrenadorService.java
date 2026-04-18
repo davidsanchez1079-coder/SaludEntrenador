@@ -103,27 +103,47 @@ public class EntrenadorService {
             %s
 
             INSTRUCCIONES PARA TU RESPUESTA:
-            1. FEEDBACK INMEDIATO: Evalua esta serie. Fue buena? Puede mejorar? Se bien especifico.
 
-            2. COACHING DE POSTURA Y TECNICA: Segun el ejercicio, da un tip concreto:
-               - Cual debe ser la sensacion muscular correcta (donde debe "quemar")
-               - Punto clave de la postura (ej: "codos a 45 grados", "espalda pegada al banco")
-               - Error comun a evitar en este ejercicio especifico
-               - Velocidad del movimiento (ej: "baja en 3 segundos, sube explosivo")
+            1. ANALISIS DE RENDIMIENTO (se MUY especifico):
+               - Compara reps logradas vs reps objetivo. Si logro MENOS DEL 70%% de las reps objetivo, el peso es DEMASIADO ALTO.
+               - Ejemplo: si el objetivo es 8-10 reps y logro 4, eso es 50%% = PESO MUY ALTO, BAJAR INMEDIATAMENTE.
+               - Si logro 8 de 8-10, esta perfecto.
+               - Si logro 12+ de 8-10, el peso es MUY BAJO, subir.
+               - Analiza la TENDENCIA: si en las series anteriores de hoy tambien fallo, BAJAR MAS.
 
-            3. TIPO DE SERIE: Clasifica la siguiente serie:
-               - "aproximacion" = todavia calentando, subir peso
-               - "trabajo" = peso objetivo, buscar el rango de reps completo
-               - "tope" = serie pesada, buscar maximo esfuerzo con buena tecnica
-               - "descarga" = bajar peso, buscar bombeo y conexion mente-musculo
+            2. COACHING DE TECNICA (especifico al ejercicio):
+               - Cual es la sensacion muscular correcta y DONDE debe sentir el trabajo
+               - Un punto clave de postura para ESTE ejercicio en particular
+               - Velocidad: fase concentrica vs excentrica
+               - El error MAS comun que la gente comete en este ejercicio
 
-            4. AJUSTE PARA SIGUIENTE SERIE: Basado en el RPE, reps logradas y objetivo:
-               - Si RPE < 70%% y completo las reps: SUBIR peso
-               - Si RPE 70-85%% y completo reps: MANTENER o subir ligeramente
-               - Si RPE > 85%% y no completo reps: MANTENER peso
-               - Si RPE > 90%%: BAJAR peso o reducir reps
+            3. CLASIFICACION DE SIGUIENTE SERIE:
+               - "aproximacion" = serie de calentamiento, ir subiendo peso gradualmente
+               - "trabajo" = peso ideal encontrado, completar rango de reps con buena tecnica
+               - "tope" = ir al maximo esfuerzo (solo si las series previas fueron exitosas)
+               - "descarga" = BAJAR peso significativamente, enfocarse en contraccion y bombeo
 
-            5. MOTIVACION: Una frase corta, directa, tipo entrenador. No cursi.
+            4. AJUSTE DE PESO - REGLAS ESTRICTAS (para el OBJETIVO: %s):
+               OBJETIVO HIPERTROFIA (ganar musculo): rango ideal 8-12 reps
+               - Logro MENOS de 6 reps: BAJAR 15-20%% del peso. El musculo no esta recibiendo suficiente tiempo bajo tension.
+               - Logro 6-7 reps: BAJAR 5-10%%. Cerca pero necesita mas reps para hipertrofia.
+               - Logro 8-12 reps: PERFECTO. Mantener o subir 2.5-5%% si RPE < 75%%.
+               - Logro 12+ reps: SUBIR 5-10%%. Peso insuficiente para estimulo de crecimiento.
+
+               OBJETIVO FUERZA: rango ideal 3-6 reps
+               - Logro menos de 3 reps: BAJAR 10%%.
+               - Logro 3-6 reps: PERFECTO. Mantener.
+               - Logro 6+ reps: SUBIR 5-10%%.
+
+               OBJETIVO RESISTENCIA: rango ideal 15-20 reps
+               - Logro menos de 12 reps: BAJAR 15-20%%.
+               - Logro 15-20 reps: PERFECTO.
+               - Logro 20+ reps: SUBIR peso.
+
+               SI FALLO 2 SERIES SEGUIDAS CON POCAS REPS: bajar significativamente y hacer serie de "descarga".
+               NUNCA sugieras mantener el mismo peso si no logro ni el 70%% de las reps objetivo.
+
+            5. MOTIVACION: Frase directa de entrenador real. Que se sienta el apoyo pero tambien la exigencia.
 
             Responde UNICAMENTE en JSON valido:
             {
@@ -234,11 +254,13 @@ public class EntrenadorService {
         }
 
         String perfil = usuarioService.generarResumenPerfil(usuarioId);
+        String objetivo = (usuario.getObjetivoGeneral() != null ? usuario.getObjetivoGeneral() : "Ganar musculo") +
+                (usuario.getObjetivoEspecifico() != null ? " - " + usuario.getObjetivoEspecifico() : "");
 
         String prompt = String.format(FEEDBACK_SERIE_PROMPT,
                 perfil, ejercicio, musculoPrincipal, serieActual, seriesTotales,
                 peso, reps, String.valueOf(intensidad), comoSeSintio.isBlank() ? "No especifico" : comoSeSintio,
-                repsPlan, pesoPlan, seriesHoy, historialTexto.toString());
+                repsPlan, pesoPlan, seriesHoy, historialTexto.toString(), objetivo);
 
         String respuestaIA = claudeService.chat(prompt, List.of(Map.of("role", "user", "content", "Dame feedback de esta serie.")));
 
