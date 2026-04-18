@@ -39,10 +39,23 @@ public class EntrenadorService {
             3. Las series intermedias son de TRABAJO con el peso objetivo
             4. La ultima serie puede ser al tope si el cliente esta listo
             5. Nunca pongas 0 kg. Siempre pon un peso concreto aunque sea estimado.
+            6. Los pesos van en incrementos de 2.5 kg (barras) o 2 kg (mancuernas).
+
+            REGLA DE BARRAS - MUY IMPORTANTE:
+            Cuando el ejercicio usa barra, SIEMPRE considera el peso de la barra:
+            - BARRA RECTA (press banca, press militar, sentadilla, peso muerto, curl con barra): pesa 20 kg (44 lbs)
+            - BARRA Z / EZ (curl z, press frances, remo con barra z): pesa 14 kg (30 lbs)
+            - En la nota_coach SIEMPRE especifica:
+              * Que tipo de barra se usa
+              * El peso total incluye la barra
+              * Cuanto cargar POR LADO
+              * Ejemplo: "Peso total: 60kg (barra recta 20kg + 20kg por lado)"
+            - El campo peso_sugerido_kg debe ser el PESO TOTAL (barra + discos)
+            - Para mancuernas, el peso es POR MANCUERNA
 
             Si el usuario pide una rutina, responde SIEMPRE en JSON valido:
             {
-              "respuesta": "Aqui tienes tu plan. Los pesos estan basados en tu peso corporal y nivel.",
+              "respuesta": "Aqui tienes tu plan. Los pesos incluyen el peso de la barra donde aplica.",
               "rutina": {
                 "nombre": "Plan de entrenamiento",
                 "dias": [
@@ -51,12 +64,12 @@ public class EntrenadorService {
                     "grupo": "Pecho y tricep",
                     "ejercicios": [
                       {
-                        "nombre": "Press de banca",
+                        "nombre": "Press de banca con barra",
                         "series": "4",
                         "repeticiones": "8-10",
-                        "peso_sugerido_kg": "40",
+                        "peso_sugerido_kg": "60",
                         "descanso_seg": "90",
-                        "nota_coach": "Serie 1 con 30kg para calentar. Series 2-4 con 40kg buscando 8-10 reps."
+                        "nota_coach": "Barra recta (20kg). Peso total: 60kg = barra + 20kg por lado. Serie 1 con 40kg (10kg/lado) para calentar."
                       }
                     ]
                   }
@@ -80,6 +93,15 @@ public class EntrenadorService {
     private static final String FEEDBACK_SERIE_PROMPT = """
             Eres un ENTRENADOR PERSONAL DE ELITE guiando a tu cliente SERIE POR SERIE en tiempo real.
             Hablas directo, motivacional, como si estuvieras al lado del cliente en el gym.
+
+            REGLA DE BARRAS:
+            Si el ejercicio usa barra, SIEMPRE considera el peso de la barra en tu analisis:
+            - Barra recta (press banca, press militar, sentadilla, peso muerto, curl con barra): 20 kg (44 lbs)
+            - Barra Z/EZ (curl z, press frances): 14 kg (30 lbs)
+            - En tu feedback y ajuste, especifica el peso total Y cuanto cargar por lado.
+            - Ejemplo: "Sube a 70kg total (barra 20kg + 25kg por lado)"
+            - Si el usuario reporta un peso, asume que es el peso TOTAL (barra + discos).
+            Para mancuernas, el peso es POR MANCUERNA.
 
             PERFIL DEL USUARIO:
             %s
@@ -144,9 +166,17 @@ public class EntrenadorService {
                NUNCA sugieras mantener el mismo peso si no logro ni el 70%% de las reps objetivo.
 
                REGLA DE REDONDEO OBLIGATORIA:
-               Los pesos en el gym van en incrementos de 2.5 kg o 5 kg (mancuernas: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 kg etc. Barras: 20, 25, 30, 35, 40, 45, 50 kg etc.)
-               SIEMPRE redondea el peso sugerido al incremento de 2.5 kg mas cercano.
-               Nunca sugieras pesos como 22.3 kg o 37.8 kg. Solo numeros redondeados: 20, 22.5, 25, 27.5, 30, etc.
+               Los pesos van en incrementos de 2.5 kg (barras) o 2 kg (mancuernas).
+               Barras: 20, 22.5, 25, 27.5, 30, 35, 40, 45, 50 kg etc.
+               Mancuernas: 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 kg etc.
+               Nunca sugieras pesos como 22.3 kg o 37.8 kg.
+
+               REGLA DE BARRAS EN AJUSTES:
+               Si es ejercicio de barra, en el campo "feedback" especifica:
+               - Peso total sugerido
+               - Cuanto va por lado (descontando la barra)
+               - Ejemplo: "Sube a 65kg (barra recta 20kg + 22.5kg por lado)"
+               El campo peso_sugerido siempre es el PESO TOTAL.
 
             5. MOTIVACION: Frase directa de entrenador real. Que se sienta el apoyo pero tambien la exigencia.
 
